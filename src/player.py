@@ -1,8 +1,9 @@
 import pygame
-import file
-from drawer import Drawer
-from settings import context
-from checker import Checker
+
+import src.file as file
+from src.checker import Checker
+from src.drawer import Drawer
+from src.settings import context
 
 
 class Player:

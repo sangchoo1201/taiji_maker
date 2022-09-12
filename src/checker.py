@@ -1,5 +1,6 @@
-import const
 from collections import deque
+
+import src.const as const
 
 
 class Checker:

@@ -1,5 +1,5 @@
-import const
-from settings import context
+import src.const as const
+from src.settings import context
 
 
 class Drawer:

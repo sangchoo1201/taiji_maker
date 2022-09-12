@@ -1,5 +1,6 @@
 import json
-from tile import Tile
+
+from src.tile import Tile
 
 
 def reader(path):

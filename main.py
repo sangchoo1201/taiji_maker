@@ -1,12 +1,14 @@
-import pygame
 import sys
-from settings import context
-from player import Player
+
+import pygame
+
+from src.player import Player
+from src.settings import context
 
 pygame.init()
 screen = pygame.display.set_mode(context.screen_size, pygame.RESIZABLE)
 pygame.display.set_caption("Taiji maker")
-icon = pygame.image.load("../img/icon.png")
+icon = pygame.image.load("img/icon.png")
 pygame.display.set_icon(icon)
 
 
@@ -16,7 +18,7 @@ def end(*_):
 
 
 def main(*_):
-    player = Player(screen, "../levels/level.json")
+    player = Player(screen, "levels/level.json")
     while True:
         result_main = player.run()
         if result_main is not None:

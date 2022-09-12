@@ -1,7 +1,7 @@
 import pygame
-import const
 
-from settings import context
+import src.const as const
+from src.settings import context
 
 
 def fill(surface, color):
@@ -79,7 +79,7 @@ class Tile(pygame.sprite.Sprite):
         pygame.draw.rect(self.image, color if self.lit else const.TRANS, rect)
         if self.hidden:
             return
-        symbol_image = pygame.image.load(f"../img/symbol/{self.symbol}.png").convert_alpha()
+        symbol_image = pygame.image.load(f"img/symbol/{self.symbol}.png").convert_alpha()
         symbol_image = pygame.transform.scale(symbol_image, (size, size))
         if self.color and self.symbol not in const.FLOWER:
             fill(symbol_image, self.color)
