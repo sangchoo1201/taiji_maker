@@ -12,10 +12,13 @@ class Player:
         self.drawer = Drawer(screen).set_grid(file.reader(path))
         self.drag = None
 
+        self.result = ""
+
     def get_event(self):
+        from main import end
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return quit
+                return end
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button != 1:
                     continue
@@ -30,11 +33,13 @@ class Player:
             if event.type != pygame.KEYDOWN:
                 continue
             if event.key == pygame.K_ESCAPE:
-                return quit
+                return end
             if event.key == pygame.K_SPACE:
-                print(self.check())
+                self.check()
 
     def run(self):
+        self.screen.fill((63, 63, 63))
+
         result = self.get_event()
         if result is not None:
             return result
@@ -49,11 +54,16 @@ class Player:
             if sprite.lit == self.drag:
                 sprite.flip()
 
-        self.screen.fill((63, 63, 63))
         self.drawer.draw()
+
+        font = pygame.font.Font("resource/font/D2Coding.ttf", 64)
+        text_image = font.render(self.result, True, (255, 255, 255))
+        text_rect = text_image.get_rect(center=(context.screen_width // 2, context.screen_height - 36))
+        self.screen.blit(text_image, text_rect)
+
         pygame.display.update()
         context.clock.tick(60)
 
     def check(self):
         checker = Checker(self.drawer.grid)
-        return checker.check()
+        self.result = str(checker.check())

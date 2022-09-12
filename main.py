@@ -8,7 +8,7 @@ from src.settings import context
 pygame.init()
 screen = pygame.display.set_mode(context.screen_size, pygame.RESIZABLE)
 pygame.display.set_caption("Taiji maker")
-icon = pygame.image.load("img/icon.png")
+icon = pygame.image.load("resource/icon/icon.png")
 pygame.display.set_icon(icon)
 
 

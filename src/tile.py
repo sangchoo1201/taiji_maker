@@ -79,7 +79,7 @@ class Tile(pygame.sprite.Sprite):
         pygame.draw.rect(self.image, color if self.lit else const.TRANS, rect)
         if self.hidden:
             return
-        symbol_image = pygame.image.load(f"img/symbol/{self.symbol}.png").convert_alpha()
+        symbol_image = pygame.image.load(f"resource/symbol/{self.symbol}.png").convert_alpha()
         symbol_image = pygame.transform.scale(symbol_image, (size, size))
         if self.color and self.symbol not in const.FLOWER:
             fill(symbol_image, self.color)
