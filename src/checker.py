@@ -59,6 +59,8 @@ class Checker:
                 for dx, dy in const.DIRECTIONS:
                     if not 0 <= y + dy < self.width or not 0 <= x + dx < self.height:
                         continue
+                    if not self.grid[x + dx][y + dy].exist:
+                        continue
                     if self.grid[x + dx][y + dy].lit == sprite.lit:
                         count += 1
                 if count != sprite.symbol - 20:
