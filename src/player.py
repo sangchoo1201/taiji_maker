@@ -1,5 +1,6 @@
 import pygame
 
+import src.const as const
 import src.file as file
 from src.checker import Checker
 from src.drawer import Drawer
@@ -15,7 +16,7 @@ class Player:
         self.result = ""
 
     def get_event(self):
-        from main import end
+        from main import end, level_select
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return end
@@ -33,12 +34,12 @@ class Player:
             if event.type != pygame.KEYDOWN:
                 continue
             if event.key == pygame.K_ESCAPE:
-                return end
+                return level_select
             if event.key == pygame.K_SPACE:
                 self.check()
 
     def run(self):
-        self.screen.fill((63, 63, 63))
+        self.screen.fill(const.DARK)
 
         result = self.get_event()
         if result is not None:

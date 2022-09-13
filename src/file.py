@@ -10,7 +10,7 @@ def reader(path):
         for j, tile in enumerate(row):
             sprite = Tile()
             sprite.symbol = tile['symbol']
-            sprite.color = tuple(tile['color'])
+            sprite.color = tuple(tile['color']) if type(tile['color']) == list else tile['color']
             sprite.fixed = tile['fixed']
             sprite.lit = tile['lit']
             sprite.hidden = tile['hidden']

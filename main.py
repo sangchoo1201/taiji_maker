@@ -3,6 +3,7 @@ import sys
 import pygame
 
 from src.player import Player
+from src.selector import Selector
 from src.settings import context
 
 pygame.init()
@@ -17,19 +18,28 @@ def end(*_):
     sys.exit()
 
 
-def main(*_):
-    player = Player(screen, "levels/level.json")
+def level_select(*_):
+    selector = Selector(screen)
+    while True:
+        result_selector = selector.run()
+        if result_selector is not None:
+            return result_selector
+
+
+def play(file_name, *_):
+    player = Player(screen, f"levels/{file_name}")
     while True:
         result_main = player.run()
         if result_main is not None:
             return result_main
 
 
-scene = main
-args = ()
-while True:
-    result = scene(*args)
-    if type(result) == tuple:
-        scene, *args = result
-    else:
-        scene, args = result, ()
+if __name__ == "__main__":
+    scene = level_select
+    args = ()
+    while True:
+        result = scene(*args)
+        if type(result) == tuple:
+            scene, *args = result
+        else:
+            scene, args = result, ()

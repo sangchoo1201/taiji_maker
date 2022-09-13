@@ -1,0 +1,9 @@
+/dist/
+/dist/levels/
+/dist/resource/
+/dist/resource/font/
+/dist/resource/icon/
+/dist/resource/symbol/
+/build/
+main.spec
+taiji_maker.zip
