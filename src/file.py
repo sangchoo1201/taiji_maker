@@ -5,6 +5,7 @@ from src.tile import Tile
 
 
 def reader(path):
+    path = path if path.startswith("levels/") else f"levels/{path}"
     if not os.path.exists(path):
         return [[Tile() for _ in range(5)] for _ in range(5)]
     with open(path, 'r') as f:
