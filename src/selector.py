@@ -1,4 +1,4 @@
-import glob
+import os
 
 import pygame
 
@@ -10,7 +10,8 @@ class Selector:
     def __init__(self, screen, next_scene):
         self.screen = screen
         self.next_scene = next_scene
-        self.levels = [f.split("\\")[-1] for f in glob.glob("levels/*.json")]
+        self.path = context.path
+        self.levels = os.listdir(self.path)
         self.selecting = context.selecting
         self.bias = 0
         self.font = pygame.font.Font("resource/font/D2Coding.ttf", 48)
@@ -27,9 +28,9 @@ class Selector:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button != 1:
                     continue
-                self.selecting = max(0, min(len(self.levels) - 1, self.selecting))
-                context.selecting = self.selecting
-                return self.next_scene, self.levels[self.selecting]
+                result = self.select()
+                if result is not None:
+                    return result
             if event.type != pygame.KEYDOWN:
                 continue
             if event.key == pygame.K_ESCAPE:
@@ -41,9 +42,20 @@ class Selector:
                 self.selecting += 1
                 self.down_counter = 15
             if event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                self.selecting = max(0, min(len(self.levels) - 1, self.selecting))
-                context.selecting = self.selecting
-                return self.next_scene, self.levels[self.selecting]
+                result = self.select()
+                if result is not None:
+                    return result
+
+    def select(self):
+        self.selecting = max(0, min(len(self.levels) - 1, self.selecting))
+        context.selecting = self.selecting
+        if self.levels[self.selecting].endswith(".tj"):
+            return self.next_scene, self.path + self.levels[self.selecting]
+        if self.levels[self.selecting] == "<<":
+            self.path = "/".join(self.path.split("/")[:-2]) + "/"
+        else:
+            self.path += f"{self.levels[self.selecting]}/"
+        context.path = self.path
 
     def run(self):
         result = self.get_event()
@@ -72,6 +84,10 @@ class Selector:
             self.selecting += 1
             self.down_counter = 2
 
+        self.levels = os.listdir(self.path)
+        self.levels.sort(key=lambda x: x.count("."))
+        if self.path != "levels/":
+            self.levels.insert(0, "<<")
         self.selecting = max(0, min(len(self.levels) - 1, self.selecting))
         max_levels = int(context.screen_height / 64 - 0.51)
         if self.selecting < self.bias:
@@ -82,12 +98,14 @@ class Selector:
         self.screen.fill(const.DARK)
 
         for i, line in enumerate(self.levels[self.bias:self.bias + max_levels]):
+            color = const.WHITE if line.endswith(".tj") else const.BLUE
+            line = line[:-3] if line.endswith(".tj") else line
             if i + self.bias == self.selecting:
-                text_image = self.font.render(">", True, const.WHITE)
+                text_image = self.font.render(">", True, color)
                 text_rect = text_image.get_rect(bottomleft=(32, int((i + 1.5) * 64)))
                 self.screen.blit(text_image, text_rect)
                 line = f" {line}"
-            text_image = self.font.render(line[:-5], True, const.WHITE)
+            text_image = self.font.render(line, True, color)
             text_rect = text_image.get_rect(bottomleft=(80, int((i + 1.5) * 64)))
             self.screen.blit(text_image, text_rect)
 

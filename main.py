@@ -38,7 +38,7 @@ def select(*_):
 
 
 def play(file_name, *_):
-    player = Player(screen, f"levels/{file_name}")
+    player = Player(screen, file_name)
     while True:
         result_main = player.run()
         if result_main is not None:
@@ -46,7 +46,7 @@ def play(file_name, *_):
 
 
 def new(*_):
-    text_box = TextBox(screen, "Enter level name", make, ".json")
+    text_box = TextBox(screen, "Enter level name", make, ".tj")
     while True:
         result_text_box = text_box.run()
         if result_text_box is not None:

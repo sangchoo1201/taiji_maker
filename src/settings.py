@@ -8,6 +8,7 @@ class Context:
         self.clock = pygame.time.Clock()
         self.selecting = 0
         self.is_editing = False
+        self.path = "levels/"
 
     @property
     def screen_width(self):

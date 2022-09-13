@@ -16,14 +16,14 @@ class TextBox:
         self.backspace_count = -1
 
     def get_input(self):
-        from main import end
+        from main import end, main
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return end
             if event.type != pygame.KEYDOWN:
                 continue
             if event.key == pygame.K_ESCAPE:
-                return end
+                return main
             if event.key == pygame.K_BACKSPACE:
                 self.backspace_count = 25
                 self.input = self.input[:-1]
@@ -32,7 +32,7 @@ class TextBox:
                 return self.callback, self.input + self.suffix
             else:
                 self.input += event.unicode
-                self.input = self.input.lstrip()[:20]
+                self.input = self.input.lstrip()[:30]
 
     def run(self):
         result = self.get_input()

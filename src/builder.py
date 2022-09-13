@@ -11,7 +11,7 @@ from src.settings import context
 class Builder:
     def __init__(self, screen, file_name):
         self.screen = screen
-        self.save_path = f"levels/{file_name}"
+        self.save_path = file_name
         self.drawer = Drawer(screen).set_grid(reader(self.save_path))
 
         self.save_counter = 0

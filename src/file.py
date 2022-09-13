@@ -24,6 +24,13 @@ def reader(path):
 
 
 def writer(path, data):
+    if "/" in path:
+        paths = path.split("/")
+        for i in range(1, len(paths)):
+            dir_path = "levels/" + "/".join(paths[:i])
+            if not os.path.exists(dir_path):
+                print(dir_path)
+                os.mkdir(dir_path)
     data_converted = []
     for row in data:
         data_converted.append([])
@@ -37,5 +44,5 @@ def writer(path, data):
                 "exist": sprite.exist
             }
             data_converted[-1].append(tile)
-    with open(path, 'w') as f:
+    with open(f"levels/{path}", 'w') as f:
         json.dump(data_converted, f, indent=4)
