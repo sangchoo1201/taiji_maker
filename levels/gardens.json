@@ -198,11 +198,7 @@
         },
         {
             "symbol": 0,
-            "color": [
-                0,
-                0,
-                0
-            ],
+            "color": 0,
             "fixed": false,
             "lit": false,
             "hidden": false,
@@ -210,11 +206,7 @@
         },
         {
             "symbol": 0,
-            "color": [
-                0,
-                0,
-                0
-            ],
+            "color": 0,
             "fixed": false,
             "lit": false,
             "hidden": false,
@@ -260,11 +252,7 @@
         },
         {
             "symbol": 0,
-            "color": [
-                0,
-                0,
-                0
-            ],
+            "color": 0,
             "fixed": false,
             "lit": false,
             "hidden": false,
@@ -322,11 +310,7 @@
         },
         {
             "symbol": 0,
-            "color": [
-                0,
-                0,
-                0
-            ],
+            "color": 0,
             "fixed": false,
             "lit": false,
             "hidden": false,
@@ -334,11 +318,7 @@
         },
         {
             "symbol": 0,
-            "color": [
-                0,
-                0,
-                0
-            ],
+            "color": 0,
             "fixed": false,
             "lit": false,
             "hidden": false,
@@ -358,11 +338,7 @@
         },
         {
             "symbol": 0,
-            "color": [
-                0,
-                0,
-                0
-            ],
+            "color": 0,
             "fixed": false,
             "lit": false,
             "hidden": false,

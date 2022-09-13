@@ -1,5 +1,6 @@
 import src.const as const
 from src.settings import context
+from src.tile import Tile
 
 
 class Drawer:
@@ -15,6 +16,14 @@ class Drawer:
         self.grid = grid.copy()
         self.height = len(grid)
         self.width = len(grid[0]) if grid else 0
+        return self
+
+    def resize(self, dx, dy):
+        self.width += dx
+        self.height += dy
+        self.width = max(self.width, 1)
+        self.height = max(self.height, 1)
+        self.grid = [[Tile() for _ in range(self.width)] for _ in range(self.height)]
         return self
 
     def draw(self):

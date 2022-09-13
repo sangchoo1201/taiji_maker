@@ -15,8 +15,10 @@ class Player:
 
         self.result = ""
 
+        context.is_editing = False
+
     def get_event(self):
-        from main import end, level_select
+        from main import end, select
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return end
@@ -34,8 +36,8 @@ class Player:
             if event.type != pygame.KEYDOWN:
                 continue
             if event.key == pygame.K_ESCAPE:
-                return level_select
-            if event.key == pygame.K_SPACE:
+                return select
+            if event.key in (pygame.K_RETURN, pygame.K_SPACE):
                 self.check()
 
     def run(self):

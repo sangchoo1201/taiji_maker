@@ -6,13 +6,15 @@ class Context:
         self.tile_size = 64
         self.line_width = 4
         self.clock = pygame.time.Clock()
+        self.selecting = 0
+        self.is_editing = False
 
     @property
     def screen_width(self):
         try:
             return pygame.display.get_window_size()[0]
         except pygame.error:
-            return 800
+            return 1000
 
     @property
     def screen_height(self):

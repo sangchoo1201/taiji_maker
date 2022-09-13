@@ -1,9 +1,12 @@
 import json
+import os
 
 from src.tile import Tile
 
 
 def reader(path):
+    if not os.path.exists(path):
+        return [[Tile() for _ in range(5)] for _ in range(5)]
     with open(path, 'r') as f:
         data = json.load(f)
     for i, row in enumerate(data):
