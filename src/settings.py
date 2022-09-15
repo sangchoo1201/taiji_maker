@@ -6,6 +6,7 @@ class Context:
         self.tile_size = 64
         self.line_width = 4
         self.clock = pygame.time.Clock()
+        self.menu = 0
         self.selecting = 0
         self.is_editing = False
         self.path = "levels/"

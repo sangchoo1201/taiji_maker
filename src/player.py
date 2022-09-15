@@ -1,4 +1,5 @@
 import pygame
+import clipboard
 
 import src.const as const
 import src.file as file
@@ -11,49 +12,46 @@ class Player:
     def __init__(self, screen, path):
         self.screen = screen
         self.path = path
-        self.drawer = Drawer(screen).set_grid(file.reader(path))
+        self.drawer = Drawer(screen).set_grid(
+            file.get(clipboard.paste()) if path is None else file.reader(path)
+        )
         self.drag = (None, "")
 
         self.result = ""
 
         context.is_editing = False
 
-    def get_event(self):
-        from main import end, select
+    def get_event(self):  # sourcery skip: low-code-quality
+        from main import end, select, main
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return end
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button not in (1, 2, 3):
+                if not 1 <= event.button <= 3:
                     continue
-                x, y = pygame.mouse.get_pos()
-                x, y = self.drawer.convert_coordinates(x, y)
+                x, y = self.drawer.convert_coordinates(*event.pos)
                 if x < 0 or x >= self.drawer.width or y < 0 or y >= self.drawer.height:
                     continue
                 sprite = self.drawer.grid[y][x]
                 if sprite.fixed and event.button == 1:
                     continue
-                if event.button == 1:
-                    self.drag = (sprite.lit, "lit")
-                elif event.button == 2:
-                    self.drag = (sprite.marked, "mark")
-                elif event.button == 3:
-                    self.drag = (True, "lit")
+                self.drag = ((sprite.lit, "lit"), (sprite.marked, "mark"), (sprite.exist, "exist"))[event.button - 1]
             if event.type != pygame.KEYDOWN:
                 continue
             if event.key == pygame.K_ESCAPE:
-                return select
+                return main if self.path is None else select
             if event.key in (pygame.K_RETURN, pygame.K_SPACE):
                 self.check()
             if event.key == pygame.K_r:
-                self.drawer = Drawer(self.screen).set_grid(file.reader(self.path))
+                self.drawer = Drawer(self.screen).set_grid(
+                    file.get(clipboard.paste()) if self.path is None else file.reader(self.path)
+                )
             if event.key == pygame.K_m:
-                x, y = pygame.mouse.get_pos()
-                x, y = self.drawer.convert_coordinates(x, y)
+                x, y = self.drawer.convert_coordinates(*event.pos)
                 if x < 0 or x >= self.drawer.width or y < 0 or y >= self.drawer.height:
                     continue
                 sprite = self.drawer.grid[y][x]
-                self.drag = (sprite.marked, "mark")
+                self.drag = sprite.marked, "mark"
 
     def run(self):
         self.screen.fill(const.DARK)

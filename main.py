@@ -37,7 +37,7 @@ def select(*_):
             return result_selector
 
 
-def play(file_name, *_):
+def play(file_name=None, *_):
     player = Player(screen, file_name)
     while True:
         result_main = player.run()

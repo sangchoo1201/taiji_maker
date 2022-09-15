@@ -1,9 +1,10 @@
 import pygame
+import clipboard
 
 import src.const as const
 from src.button import Button
 from src.drawer import Drawer
-from src.file import reader, writer
+from src.file import reader, writer, encode
 from src.palette import Palette
 from src.settings import context
 
@@ -16,6 +17,7 @@ class Builder:
         self.new_file = new_file
 
         self.save_counter = 0
+        self.copy_counter = 0
 
         self.symbol_palette = Palette(250, 26)
         self.symbol_palette.list = [(pygame.image.load(f"resource/symbol/{i}.png"), i) for i in const.SYMBOLS]
@@ -27,6 +29,11 @@ class Builder:
             surface.fill(color)
             self.color_palette.list.append((surface, color))
 
+        self.make_buttons()
+
+        context.is_editing = True
+
+    def make_buttons(self):
         self.hidden_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
         rect = self.hidden_surface.get_rect(center=(
             context.screen_width // 2 - context.tile_size * 3.1,
@@ -53,9 +60,14 @@ class Builder:
             context.screen_width - context.tile_size * 1.8,
             context.tile_size * 0.8
         ))
-        self.save_button = Button(self.save_surface, rect, ("save", "saved"))
+        self.save_button = Button(self.save_surface, rect, ("save (ctrl+S)", "saved"))
 
-        context.is_editing = True
+        self.copy_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
+        rect = self.hidden_surface.get_rect(center=(
+            context.screen_width - context.tile_size * 1.8,
+            context.tile_size * 1.8
+        ))
+        self.copy_button = Button(self.copy_surface, rect, ("copy (ctrl+C)", "copied"))
 
     def get_event(self):
         from main import load, end, main
@@ -71,6 +83,9 @@ class Builder:
             if event.key == pygame.K_s and pygame.key.get_pressed()[pygame.K_LCTRL]:
                 writer(self.save_path, self.drawer.grid)
                 self.save_counter = 60
+            if event.key == pygame.K_c and pygame.key.get_pressed()[pygame.K_LCTRL]:
+                clipboard.copy(encode(self.drawer.grid))
+                self.copy_counter = 60
             if event.key == pygame.K_UP:
                 self.drawer.resize(0, -1)
             if event.key == pygame.K_DOWN:
@@ -82,7 +97,7 @@ class Builder:
 
     def handle_mouse(self, mouse_button):
         x, y = pygame.mouse.get_pos()
-        for button in (self.hidden_button, self.fixed_button, self.exist_button, self.save_button):
+        for button in (self.hidden_button, self.fixed_button, self.exist_button, self.save_button, self.copy_button):
             if button.rect.collidepoint(x, y) and mouse_button == 1:
                 button.click()
                 return
@@ -159,10 +174,24 @@ class Builder:
             writer(self.save_path, self.drawer.grid)
             self.save_counter = 60
 
-        if self.save_counter > 0:
-            self.save_counter -= 1
+        if self.copy_button.selected == 1:
+            self.copy_button.selected = 0
+            clipboard.copy(encode(self.drawer.grid))
+            self.copy_counter = 60
+
+        if self.save_counter > self.copy_counter:
+            self.copy_counter = 0
+        else:
+            self.save_counter = 0
+
+        if self.save_counter + self.copy_counter > 0:
+            if self.save_counter > 0:
+                self.save_counter -= 1
+            else:
+                self.copy_counter -= 1
             font = pygame.font.Font("resource/font/D2Coding.ttf", 48)
-            text = font.render("Saved!", True, const.WHITE)
+            text = font.render("Saved!" if self.save_counter > 0 else "Copied!", True, const.WHITE).convert_alpha()
+            text.set_alpha(255 * min(self.save_counter + self.copy_counter, 30) // 30)
             self.screen.blit(text, text.get_rect(center=(context.screen_width // 2, context.tile_size)))
 
         for i, button in enumerate((self.hidden_button, self.fixed_button, self.exist_button)):
@@ -173,12 +202,13 @@ class Builder:
             ))
             self.screen.blit(button.screen, button.rect)
 
-        self.save_button.draw()
-        self.save_button.rect = self.save_button.screen.get_rect(center=(
-            context.screen_width - context.tile_size * 1.8,
-            context.tile_size * 0.8
-        ))
-        self.screen.blit(self.save_button.screen, self.save_button.rect)
+        for i, button in enumerate((self.save_button, self.copy_button)):
+            button.draw()
+            button.rect = button.screen.get_rect(center=(
+                context.screen_width - context.tile_size * 1.8,
+                context.tile_size * (i * 1.1 + 0.8)
+            ))
+            self.screen.blit(button.screen, button.rect)
 
         pygame.display.update()
         context.clock.tick(60)

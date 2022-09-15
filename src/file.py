@@ -2,6 +2,7 @@ import json
 import os
 
 from src.tile import Tile
+import src.const as const
 
 
 def reader(path):
@@ -49,3 +50,75 @@ def writer(path, data):
             data_converted[-1].append(tile)
     with open(path, 'w') as f:
         json.dump(data_converted, f, indent=4)
+
+
+def encode(data):
+    output = f"{len(data[0])}:"
+    repeating_zeros = 0
+    for row in data:
+        for sprite in row:
+            repeating_zeros, output = encode_single(sprite, repeating_zeros, output)
+    if repeating_zeros > 2:
+        output = output[:-repeating_zeros]
+        if repeating_zeros >= 26:
+            output += "+Z" * (repeating_zeros // 26)
+        if repeating_zeros % 26:
+            output += f"+{chr(repeating_zeros % 26 + 64)}"
+    return output
+
+
+colors = dict(zip(const.COLORS, "roygbpkw"))
+colors_reverse = dict(zip("roygbpkw", const.COLORS))
+
+
+def encode_single(sprite, repeating_zeros, output):
+    if sprite.symbol or sprite.color:
+        if repeating_zeros > 2:
+            output = output[:-repeating_zeros]
+            if repeating_zeros >= 26:
+                output += "+Z" * (repeating_zeros // 26)
+            if repeating_zeros % 26:
+                output += f"+{chr(repeating_zeros % 26 + 64)}"
+        repeating_zeros = 0
+    symbol = chr(const.SYMBOLS.index(sprite.symbol) + 65) if sprite.symbol else ""
+    color = colors[sprite.color] if sprite.color else ""
+    option = sprite.fixed * 4 + sprite.lit * 2 + sprite.hidden if sprite.exist else 8
+    if option == 0:
+        repeating_zeros += 1
+    output += f"{symbol}{color}{option}"
+    return repeating_zeros, output
+
+
+def decode(data):
+    width, data = data.split(":")
+    width = int(width)
+    data = data.split("+")
+    data = data[0] + "".join(map(lambda x: "0" * (ord(x[0]) - 64) + x[1:] if x else x, data[1:]))
+    result = [[]]
+    i = 0
+    while i < len(data):
+        sprite = Tile()
+        if data[i] != "0":
+            if 65 <= ord(data[i]) <= 90:
+                sprite.symbol = const.SYMBOLS[ord(data[i]) - 65]
+                i += 1
+            if data[i] in colors_reverse:
+                sprite.color = colors_reverse[data[i]]
+                i += 1
+            option = int(data[i])
+            sprite.fixed = option // 4
+            sprite.lit = option % 4 // 2
+            sprite.hidden = option % 2
+            sprite.exist = option != 8
+        i += 1
+        if len(result[-1]) == width:
+            result.append([])
+        result[-1].append(sprite)
+    return result
+
+
+def get(data):
+    try:
+        return decode(data)
+    except Exception:
+        return [[Tile() for _ in range(5)] for _ in range(5)]
