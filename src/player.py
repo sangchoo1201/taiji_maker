@@ -47,7 +47,7 @@ class Player:
                     file.get(clipboard.paste()) if self.path is None else file.reader(self.path)
                 )
             if event.key == pygame.K_m:
-                x, y = self.drawer.convert_coordinates(*event.pos)
+                x, y = self.drawer.convert_coordinates(*pygame.mouse.get_pos())
                 if x < 0 or x >= self.drawer.width or y < 0 or y >= self.drawer.height:
                     continue
                 sprite = self.drawer.grid[y][x]
