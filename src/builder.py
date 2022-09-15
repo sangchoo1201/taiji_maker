@@ -9,10 +9,11 @@ from src.settings import context
 
 
 class Builder:
-    def __init__(self, screen, file_name):
+    def __init__(self, screen, file_name, new_file=False):
         self.screen = screen
         self.save_path = file_name
         self.drawer = Drawer(screen).set_grid(reader(self.save_path))
+        self.new_file = new_file
 
         self.save_counter = 0
 
@@ -32,12 +33,14 @@ class Builder:
             context.screen_height - context.tile_size * 0.8
         ))
         self.hidden_button = Button(self.hidden_surface, rect, ("not hidden", "hidden"))
+
         self.fixed_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
         rect = self.hidden_surface.get_rect(center=(
             context.screen_width // 2,
             context.screen_height - context.tile_size * 0.8
         ))
         self.fixed_button = Button(self.fixed_surface, rect, ("not fixed", "fixed (not lit)", "fixed (lit)"))
+
         self.exist_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
         rect = self.hidden_surface.get_rect(center=(
             context.screen_width // 2 + context.tile_size * 3.1,
@@ -45,10 +48,17 @@ class Builder:
         ))
         self.exist_button = Button(self.exist_surface, rect, ("exist", "not exist"))
 
+        self.save_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
+        rect = self.hidden_surface.get_rect(center=(
+            context.screen_width - context.tile_size * 1.8,
+            context.tile_size * 0.8
+        ))
+        self.save_button = Button(self.save_surface, rect, ("save", "saved"))
+
         context.is_editing = True
 
     def get_event(self):
-        from main import main, end
+        from main import load, end, main
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return end
@@ -57,7 +67,7 @@ class Builder:
             if event.type != pygame.KEYDOWN:
                 continue
             if event.key == pygame.K_ESCAPE:
-                return main
+                return main if self.new_file else load
             if event.key == pygame.K_s and pygame.key.get_pressed()[pygame.K_LCTRL]:
                 writer(self.save_path, self.drawer.grid)
                 self.save_counter = 60
@@ -72,7 +82,7 @@ class Builder:
 
     def handle_mouse(self, mouse_button):
         x, y = pygame.mouse.get_pos()
-        for button in (self.hidden_button, self.fixed_button, self.exist_button):
+        for button in (self.hidden_button, self.fixed_button, self.exist_button, self.save_button):
             if button.rect.collidepoint(x, y) and mouse_button == 1:
                 button.click()
                 return
@@ -144,6 +154,11 @@ class Builder:
             self.color_palette.screen.get_rect(topright=(context.screen_width, 0))
         )
 
+        if self.save_button.selected == 1:
+            self.save_button.selected = 0
+            writer(self.save_path, self.drawer.grid)
+            self.save_counter = 60
+
         if self.save_counter > 0:
             self.save_counter -= 1
             font = pygame.font.Font("resource/font/D2Coding.ttf", 48)
@@ -157,6 +172,13 @@ class Builder:
                 context.screen_height - context.tile_size * 0.8
             ))
             self.screen.blit(button.screen, button.rect)
+
+        self.save_button.draw()
+        self.save_button.rect = self.save_button.screen.get_rect(center=(
+            context.screen_width - context.tile_size * 1.8,
+            context.tile_size * 0.8
+        ))
+        self.screen.blit(self.save_button.screen, self.save_button.rect)
 
         pygame.display.update()
         context.clock.tick(60)

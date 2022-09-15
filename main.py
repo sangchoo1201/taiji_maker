@@ -46,7 +46,7 @@ def play(file_name, *_):
 
 
 def new(*_):
-    text_box = TextBox(screen, "Enter level name", make, ".tj")
+    text_box = TextBox(screen, "Enter level name", make, ".tj", True)
     while True:
         result_text_box = text_box.run()
         if result_text_box is not None:
@@ -54,15 +54,15 @@ def new(*_):
 
 
 def load(*_):
-    selector = Selector(screen, make)
+    selector = Selector(screen, make, False)
     while True:
         result_selector = selector.run()
         if result_selector is not None:
             return result_selector
 
 
-def make(file_name, *_):
-    builder = Builder(screen, file_name)
+def make(file_name, new_file=False, *_):
+    builder = Builder(screen, file_name, new_file)
     while True:
         result_builder = builder.run()
         if result_builder is not None:

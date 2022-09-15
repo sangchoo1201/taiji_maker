@@ -7,7 +7,7 @@ import src.const as const
 
 
 class Selector:
-    def __init__(self, screen, next_scene):
+    def __init__(self, screen, next_scene, *args):
         self.screen = screen
         self.next_scene = next_scene
         self.path = context.path
@@ -17,6 +17,7 @@ class Selector:
         self.font = pygame.font.Font("resource/font/D2Coding.ttf", 48)
         self.up_counter = -1
         self.down_counter = -1
+        self.args = args
 
     def get_event(self):
         from main import end, main
@@ -50,7 +51,7 @@ class Selector:
         self.selecting = max(0, min(len(self.levels) - 1, self.selecting))
         context.selecting = self.selecting
         if self.levels[self.selecting].endswith(".tj"):
-            return self.next_scene, self.path + self.levels[self.selecting]
+            return self.next_scene, self.path + self.levels[self.selecting], *self.args
         if self.levels[self.selecting] == "<<":
             self.path = "/".join(self.path.split("/")[:-2]) + "/"
         else:

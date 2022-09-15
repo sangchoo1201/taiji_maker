@@ -5,7 +5,7 @@ from src.settings import context
 
 
 class TextBox:
-    def __init__(self, screen, text, callback, suffix=""):
+    def __init__(self, screen, text, callback, suffix="", *args):
         self.screen = screen
         self.text = text
         self.callback = callback
@@ -14,9 +14,10 @@ class TextBox:
         self.input_font = pygame.font.Font("resource/font/D2Coding.ttf", 48)
         self.input = ""
         self.backspace_count = -1
+        self.args = args
 
     def get_input(self):
-        from main import end, main
+        from main import end, main, make
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return end
@@ -29,7 +30,7 @@ class TextBox:
                 self.input = self.input[:-1]
             elif event.key == pygame.K_RETURN and self.input.strip():
                 self.input = self.input.strip()
-                return self.callback, self.input + self.suffix
+                return self.callback, self.input + self.suffix, *self.args
             else:
                 self.input += event.unicode
                 self.input = self.input.lstrip()[:30]
