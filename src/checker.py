@@ -116,7 +116,7 @@ class Checker:
             blocks = shapes.get(color, [])
             blocks_rotate = shapes_rotate.get(color, [])
             standard = blocks[0] if blocks else blocks_rotate[0]
-            standards.append((standard, not blocks))
+            standards.append((standard, bool(blocks_rotate)))
             if len(blocks) + len(blocks_rotate) < 2:
                 continue
             for block in blocks:
@@ -143,6 +143,8 @@ class Checker:
             target[sprite.color] = target.get(sprite.color, []) + [shape]
 
     def is_identical(self, shape1, shape2, can_rotate=False):
+        if len(shape1) != len(shape2):
+            return False
         shape_list = self.rotate(shape2) if can_rotate else (shape2,)
         return any(shape1 == shape for shape in shape_list)
 
