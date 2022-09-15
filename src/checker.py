@@ -1,3 +1,4 @@
+from itertools import combinations
 from collections import deque
 
 import src.const as const
@@ -109,19 +110,25 @@ class Checker:
         shapes_rotate = {}
         for area in areas:
             self.get_line(area, shapes, shapes_rotate)
+        standards = []
         colors = set(shapes.keys()) | set(shapes_rotate.keys())
         for color in colors:
             blocks = shapes.get(color, [])
             blocks_rotate = shapes_rotate.get(color, [])
+            standard = blocks[0] if blocks else blocks_rotate[0]
+            standards.append((standard, not blocks))
             if len(blocks) + len(blocks_rotate) < 2:
                 continue
-            standard = blocks[0] if blocks else blocks_rotate[0]
             for block in blocks:
                 if not self.is_identical(standard, block):
                     return False
             for block in blocks_rotate:
                 if not self.is_identical(standard, block, True):
                     return False
+        for i, j in combinations(standards, 2):
+            print(i, j)
+            if self.is_identical(i[0], j[0], i[1] or j[1]):
+                return False
         return True
 
     def get_line(self, area, shapes, shapes_rotate):
