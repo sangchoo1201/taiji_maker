@@ -19,6 +19,7 @@ def reader(path):
             sprite.lit = tile['lit']
             sprite.hidden = tile['hidden']
             sprite.exist = tile['exist']
+            sprite.marked = False
             sprite.draw()
             data[i][j] = sprite
     return data

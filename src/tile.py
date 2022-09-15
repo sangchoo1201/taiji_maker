@@ -36,12 +36,19 @@ class Tile(pygame.sprite.Sprite):
         self.hidden = False
         self.exist = True
 
+        self.marked = False
+
         self.draw()
 
     def flip(self):
         if self.fixed:
             return self
         self.lit = not self.lit
+        self.draw()
+        return self
+
+    def mark(self):
+        self.marked = not self.marked
         self.draw()
         return self
 
@@ -53,13 +60,23 @@ class Tile(pygame.sprite.Sprite):
 
     def draw(self, lit_color=const.LIT, dark_color=const.GRAY):
         if not self.exist:
-            self.image.fill((0, 0, 0, 0))
+            self.image.fill(const.TRANS)
             return
+
+        if self.marked:
+            self.image.fill(const.MARK)
+        else:
+            self.image.fill(const.TRANS)
+
         size = context.tile_size
         width = context.line_width
+
+        image = pygame.Surface((size, size)).convert_alpha()
+        image.fill(const.TRANS)
+
         color = lit_color if self.lit else dark_color
         rect = (width, width, size - 2 * width, size - 2 * width)
-        pygame.draw.rect(self.image, color, rect, width)
+        pygame.draw.rect(image, color, rect, width)
         if self.fixed:
             triple = context.tile_size // 3
             positions = (
@@ -69,9 +86,9 @@ class Tile(pygame.sprite.Sprite):
                 ((0, size - triple), (size, size - triple)),
             )
             for start, end in positions:
-                pygame.draw.line(self.image, const.TRANS, start, end, size // 8)
+                pygame.draw.line(image, const.TRANS, start, end, size // 8)
         rect = (3 * width, 3 * width, size - 6 * width, size - 6 * width)
-        pygame.draw.rect(self.image, color if self.lit else const.TRANS, rect)
+        pygame.draw.rect(image, color if self.lit else const.TRANS, rect)
 
         symbol_image = pygame.image.load(f"resource/symbol/{self.symbol}.png").convert_alpha()
         symbol_image = pygame.transform.scale(symbol_image, (size, size))
@@ -81,7 +98,9 @@ class Tile(pygame.sprite.Sprite):
             transparent(symbol_image, 127)
         if self.color and self.symbol not in const.FLOWER:
             fill(symbol_image, self.color)
-        self.image.blit(symbol_image, (0, 0))
+        image.blit(symbol_image, (0, 0))
+
+        self.image.blit(image, (0, 0))
 
     def locate(self, centerx, centery):
         self.rect.centerx = centerx

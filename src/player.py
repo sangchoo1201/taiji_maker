@@ -12,7 +12,7 @@ class Player:
         self.screen = screen
         self.path = path
         self.drawer = Drawer(screen).set_grid(file.reader(path))
-        self.drag = None
+        self.drag = (None, "")
 
         self.result = ""
 
@@ -24,7 +24,7 @@ class Player:
             if event.type == pygame.QUIT:
                 return end
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button not in (1, 3):
+                if event.button not in (1, 2, 3):
                     continue
                 x, y = pygame.mouse.get_pos()
                 x, y = self.drawer.convert_coordinates(x, y)
@@ -33,7 +33,12 @@ class Player:
                 sprite = self.drawer.grid[y][x]
                 if sprite.fixed and event.button == 1:
                     continue
-                self.drag = sprite.lit if event.button == 1 else True
+                if event.button == 1:
+                    self.drag = (sprite.lit, "lit")
+                elif event.button == 2:
+                    self.drag = (sprite.marked, "mark")
+                elif event.button == 3:
+                    self.drag = (True, "lit")
             if event.type != pygame.KEYDOWN:
                 continue
             if event.key == pygame.K_ESCAPE:
@@ -42,6 +47,13 @@ class Player:
                 self.check()
             if event.key == pygame.K_r:
                 self.drawer = Drawer(self.screen).set_grid(file.reader(self.path))
+            if event.key == pygame.K_m:
+                x, y = pygame.mouse.get_pos()
+                x, y = self.drawer.convert_coordinates(x, y)
+                if x < 0 or x >= self.drawer.width or y < 0 or y >= self.drawer.height:
+                    continue
+                sprite = self.drawer.grid[y][x]
+                self.drag = (sprite.marked, "mark")
 
     def run(self):
         self.screen.fill(const.DARK)
@@ -50,15 +62,17 @@ class Player:
         if result is not None:
             return result
 
-        if not any(pygame.mouse.get_pressed(3)[:3:2]):
-            self.drag = None
+        if not any(pygame.mouse.get_pressed(3)[:3] + (pygame.key.get_pressed()[pygame.K_m],)):
+            self.drag = (None, 0)
 
         pos = pygame.mouse.get_pos()
         x, y = self.drawer.convert_coordinates(*pos)
         if 0 <= x < self.drawer.width and 0 <= y < self.drawer.height:
             sprite = self.drawer.grid[y][x]
-            if sprite.lit == self.drag:
+            if self.drag[1] == "lit" and sprite.lit == self.drag[0]:
                 sprite.flip()
+            elif self.drag[1] == "mark" and sprite.marked == self.drag[0]:
+                sprite.mark()
 
         self.drawer.draw()
 
