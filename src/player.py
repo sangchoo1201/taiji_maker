@@ -10,6 +10,7 @@ from src.settings import context
 class Player:
     def __init__(self, screen, path):
         self.screen = screen
+        self.path = path
         self.drawer = Drawer(screen).set_grid(file.reader(path))
         self.drag = None
 
@@ -23,22 +24,24 @@ class Player:
             if event.type == pygame.QUIT:
                 return end
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button != 1:
+                if event.button not in (1, 3):
                     continue
                 x, y = pygame.mouse.get_pos()
                 x, y = self.drawer.convert_coordinates(x, y)
                 if x < 0 or x >= self.drawer.width or y < 0 or y >= self.drawer.height:
                     continue
                 sprite = self.drawer.grid[y][x]
-                if sprite.fixed:
+                if sprite.fixed and event.button == 1:
                     continue
-                self.drag = sprite.lit
+                self.drag = sprite.lit if event.button == 1 else True
             if event.type != pygame.KEYDOWN:
                 continue
             if event.key == pygame.K_ESCAPE:
                 return select
             if event.key in (pygame.K_RETURN, pygame.K_SPACE):
                 self.check()
+            if event.key == pygame.K_r:
+                self.drawer = Drawer(self.screen).set_grid(file.reader(self.path))
 
     def run(self):
         self.screen.fill(const.DARK)
@@ -47,7 +50,7 @@ class Player:
         if result is not None:
             return result
 
-        if not pygame.mouse.get_pressed(3)[0]:
+        if not any(pygame.mouse.get_pressed(3)[:3:2]):
             self.drag = None
 
         pos = pygame.mouse.get_pos()

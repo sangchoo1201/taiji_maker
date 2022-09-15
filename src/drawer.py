@@ -16,6 +16,9 @@ class Drawer:
         self.grid = grid.copy()
         self.height = len(grid)
         self.width = len(grid[0]) if grid else 0
+        for row in self.grid:
+            for sprite in row:
+                sprite.draw()
         return self
 
     def resize(self, dx, dy):

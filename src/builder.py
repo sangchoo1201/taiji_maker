@@ -79,7 +79,7 @@ class Builder:
 
         if self.symbol_palette.screen.get_rect(topleft=(0, 0)).collidepoint(x, y) and mouse_button == 1:
             i, j = self.symbol_palette.convert_coordinates(x, y)
-            if i + j * 3 < len(self.symbol_palette.list):
+            if 0 <= i + j * 3 < len(self.symbol_palette.list):
                 self.symbol_palette.selected = i + j * 3
             return
 
@@ -87,7 +87,7 @@ class Builder:
                 and mouse_button == 1:
             x -= context.screen_width - self.color_palette.width
             i, j = self.color_palette.convert_coordinates(x, y)
-            if i + j * 3 < len(self.color_palette.list):
+            if 0 <= i + j * 3 < len(self.color_palette.list):
                 self.color_palette.selected = i + j * 3
             return
 
