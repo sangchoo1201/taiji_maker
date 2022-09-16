@@ -3,6 +3,7 @@ import clipboard
 
 import src.const as const
 import src.file as file
+from src.button import Button
 from src.checker import Checker
 from src.drawer import Drawer
 from src.settings import context
@@ -24,12 +25,22 @@ class Player:
 
         self.result = ""
 
+        self.edit_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
+        rect = self.edit_surface.get_rect(center=(
+            context.screen_width - context.tile_size * 1.8,
+            context.tile_size * 0.8
+        ))
+        self.edit_button = Button(self.edit_surface, rect, ("edit (ctrl+E)", "editing"))
+
     def get_event(self):  # sourcery skip: low-code-quality
-        from main import end, select, main
+        from main import end, select, main, make
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return end
             if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.edit_button.rect.collidepoint(*event.pos) and event.button == 1:
+                    self.edit_button.click()
+                    continue
                 if not 1 <= event.button <= 3:
                     continue
                 x, y = self.drawer.convert_coordinates(*event.pos)
@@ -45,6 +56,8 @@ class Player:
                 return main if self.path is None else select
             if event.key in (pygame.K_RETURN, pygame.K_SPACE):
                 self.check()
+            if event.key == pygame.K_e and pygame.key.get_pressed()[pygame.K_LCTRL]:
+                return make, file.get(clipboard.paste()) if self.path is None else self.path
             if event.key == pygame.K_r:
                 self.drawer = Drawer(self.screen).set_grid(
                     file.get(clipboard.paste()) if self.path is None else file.reader(self.path)
@@ -57,11 +70,15 @@ class Player:
                 self.drag = sprite.marked, "mark"
 
     def run(self):
+        from main import make
         self.screen.fill(const.DARK)
 
         result = self.get_event()
         if result is not None:
             return result
+
+        if self.edit_button.selected == 1:
+            return make, file.get(clipboard.paste()) if self.path is None else self.path
 
         if not any(pygame.mouse.get_pressed(3)[:3] + (pygame.key.get_pressed()[pygame.K_m],)):
             self.drag = (None, 0)
@@ -81,6 +98,13 @@ class Player:
         text_image = font.render(self.result, True, (255, 255, 255))
         text_rect = text_image.get_rect(center=(context.screen_width // 2, context.screen_height - 36))
         self.screen.blit(text_image, text_rect)
+
+        self.edit_button.draw()
+        self.edit_button.rect = self.edit_button.screen.get_rect(center=(
+            context.screen_width - context.tile_size * 1.8,
+            context.tile_size * 0.8
+        ))
+        self.screen.blit(self.edit_button.screen, self.edit_button.rect)
 
         pygame.display.update()
         context.clock.tick(60)

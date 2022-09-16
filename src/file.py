@@ -7,7 +7,7 @@ import src.const as const
 
 def reader(path):
     path = path if path.startswith("levels/") or path.startswith("levels\\") else f"levels/{path}"
-    if not os.path.exists(path):
+    if not os.path.exists(path) or path == "levels/":
         return [[Tile() for _ in range(5)] for _ in range(5)]
     with open(path, 'r') as f:
         data = json.load(f)

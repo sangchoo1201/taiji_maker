@@ -7,15 +7,21 @@ from src.drawer import Drawer
 from src.file import reader, writer, encode
 from src.palette import Palette
 from src.settings import context
+from src.textbox import TextBox
+from src.player import Player
 
 
 class Builder:
-    def __init__(self, screen, file_name, new_file=False):
+    def __init__(self, screen, file_name="", new_file=False):
         context.is_editing = True
 
         self.screen = screen
-        self.save_path = file_name
-        self.drawer = Drawer(screen).set_grid(reader(self.save_path))
+        if type(file_name) != str:
+            self.save_path = ""
+            self.drawer = Drawer(screen).set_grid(file_name)
+        else:
+            self.save_path = file_name
+            self.drawer = Drawer(screen).set_grid(reader(self.save_path))
         for row in self.drawer.grid:
             for sprite in row:
                 sprite.draw()
@@ -45,32 +51,39 @@ class Builder:
         self.hidden_button = Button(self.hidden_surface, rect, ("not hidden", "hidden"))
 
         self.fixed_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
-        rect = self.hidden_surface.get_rect(center=(
+        rect = self.fixed_surface.get_rect(center=(
             context.screen_width // 2,
             context.screen_height - context.tile_size * 0.8
         ))
         self.fixed_button = Button(self.fixed_surface, rect, ("not fixed", "fixed (not lit)", "fixed (lit)"))
 
         self.exist_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
-        rect = self.hidden_surface.get_rect(center=(
+        rect = self.exist_surface.get_rect(center=(
             context.screen_width // 2 + context.tile_size * 3.1,
             context.screen_height - context.tile_size * 0.8
         ))
         self.exist_button = Button(self.exist_surface, rect, ("exist", "not exist"))
 
         self.save_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
-        rect = self.hidden_surface.get_rect(center=(
+        rect = self.save_surface.get_rect(center=(
             context.screen_width - context.tile_size * 1.8,
             context.tile_size * 0.8
         ))
         self.save_button = Button(self.save_surface, rect, ("save (ctrl+S)", "saved"))
 
         self.copy_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
-        rect = self.hidden_surface.get_rect(center=(
+        rect = self.copy_surface.get_rect(center=(
             context.screen_width - context.tile_size * 1.8,
             context.tile_size * 1.8
         ))
         self.copy_button = Button(self.copy_surface, rect, ("copy (ctrl+C)", "copied"))
+
+        self.play_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
+        rect = self.play_surface.get_rect(center=(
+            context.screen_width - context.tile_size * 1.8,
+            context.tile_size * 2.8
+        ))
+        self.play_button = Button(self.play_surface, rect, ("play (ctrl+P)", "playing"))
 
     def get_event(self):
         from main import load, end, main
@@ -84,11 +97,14 @@ class Builder:
             if event.key == pygame.K_ESCAPE:
                 return main if self.new_file else load
             if event.key == pygame.K_s and pygame.key.get_pressed()[pygame.K_LCTRL]:
-                writer(self.save_path, self.drawer.grid)
-                self.save_counter = 60
+                self.save()
             if event.key == pygame.K_c and pygame.key.get_pressed()[pygame.K_LCTRL]:
                 clipboard.copy(encode(self.drawer.grid))
                 self.copy_counter = 60
+            if event.key == pygame.K_p and pygame.key.get_pressed()[pygame.K_LCTRL]:
+                result = self.play()
+                if result is not None:
+                    return result
             if event.key == pygame.K_UP:
                 self.drawer.resize(0, -1)
             if event.key == pygame.K_DOWN:
@@ -100,7 +116,8 @@ class Builder:
 
     def handle_mouse(self, mouse_button):
         x, y = pygame.mouse.get_pos()
-        for button in (self.hidden_button, self.fixed_button, self.exist_button, self.save_button, self.copy_button):
+        for button in (self.hidden_button, self.fixed_button, self.exist_button,
+                       self.save_button, self.copy_button, self.play_button):
             if button.rect.collidepoint(x, y) and mouse_button == 1:
                 button.click()
                 return
@@ -174,13 +191,17 @@ class Builder:
 
         if self.save_button.selected == 1:
             self.save_button.selected = 0
-            writer(self.save_path, self.drawer.grid)
+            self.save()
             self.save_counter = 60
 
         if self.copy_button.selected == 1:
             self.copy_button.selected = 0
             clipboard.copy(encode(self.drawer.grid))
-            self.copy_counter = 60
+
+        if self.play_button.selected == 1:
+            result = self.play()
+            if result is not None:
+                return result
 
         if self.save_counter > self.copy_counter:
             self.copy_counter = 0
@@ -205,7 +226,7 @@ class Builder:
             ))
             self.screen.blit(button.screen, button.rect)
 
-        for i, button in enumerate((self.save_button, self.copy_button)):
+        for i, button in enumerate((self.save_button, self.copy_button, self.play_button)):
             button.draw()
             button.rect = button.screen.get_rect(center=(
                 context.screen_width - context.tile_size * 1.8,
@@ -215,3 +236,35 @@ class Builder:
 
         pygame.display.update()
         context.clock.tick(60)
+
+    def get_path(self):
+        text_box = TextBox(self.screen, "Enter level name", None, ".tj", True)
+        while True:
+            result_text_box = text_box.run()
+            if result_text_box is not None:
+                break
+        if type(result_text_box) == tuple:
+            self.save_path = result_text_box[1]
+        else:
+            return result_text_box
+
+    def save(self, counter=60):
+        if not self.save_path:
+            result = self.get_path()
+            if result is not None:
+                return result
+        writer(self.save_path, self.drawer.grid)
+        self.save_counter = counter
+
+    def play(self):
+        from main import end
+        self.play_button.selected = 0
+        self.save(counter=0)
+        player = Player(self.screen, self.save_path)
+        while True:
+            result_main = player.run()
+            if result_main == end:
+                return result_main
+            elif result_main is not None:
+                context.is_editing = True
+                break

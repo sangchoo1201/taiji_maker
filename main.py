@@ -61,7 +61,7 @@ def load(*_):
             return result_selector
 
 
-def make(file_name, new_file=False, *_):
+def make(file_name="", new_file=True, *_):
     builder = Builder(screen, file_name, new_file)
     while True:
         result_builder = builder.run()

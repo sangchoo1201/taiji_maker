@@ -17,7 +17,7 @@ class TextBox:
         self.args = args
 
     def get_input(self):
-        from main import end, main, make
+        from main import end, main
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return end
@@ -50,7 +50,7 @@ class TextBox:
             self.input = self.input[:-1]
             self.backspace_count = 2
 
-        self.screen.fill(const.BLACK)
+        self.screen.fill(const.DARK)
         text = self.font.render(self.text, True, const.WHITE)
         text_rect = text.get_rect()
         text_rect.center = self.screen.get_rect().center

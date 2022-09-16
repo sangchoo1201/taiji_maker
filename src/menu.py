@@ -6,10 +6,10 @@ from src.settings import context
 
 class Menu:
     def __init__(self, screen):
-        from main import new, load, select, play, end
+        from main import make, load, select, play, end
         self.screen = screen
         self.options = (
-            ("make new level", new), ("edit level", load),
+            ("make new level", make), ("edit level", load),
             ("play level", select), ("from clipboard", play), ("quit", end)
         )
         self.selecting = context.menu
