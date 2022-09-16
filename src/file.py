@@ -72,7 +72,10 @@ colors_reverse = dict(zip("roygbpkw", const.COLORS))
 
 
 def encode_single(sprite, repeating_zeros, output):
-    if sprite.symbol or sprite.color:
+    symbol = chr(const.SYMBOLS.index(sprite.symbol) + 65) if sprite.symbol else ""
+    color = colors[sprite.color] if sprite.color else ""
+    option = sprite.fixed * 4 + sprite.lit * 2 + sprite.hidden if sprite.exist else 8
+    if symbol or color or option:
         if repeating_zeros > 2:
             output = output[:-repeating_zeros]
             if repeating_zeros >= 26:
@@ -80,9 +83,6 @@ def encode_single(sprite, repeating_zeros, output):
             if repeating_zeros % 26:
                 output += f"+{chr(repeating_zeros % 26 + 64)}"
         repeating_zeros = 0
-    symbol = chr(const.SYMBOLS.index(sprite.symbol) + 65) if sprite.symbol else ""
-    color = colors[sprite.color] if sprite.color else ""
-    option = sprite.fixed * 4 + sprite.lit * 2 + sprite.hidden if sprite.exist else 8
     if option == 0:
         repeating_zeros += 1
     output += f"{symbol}{color}{option}"
