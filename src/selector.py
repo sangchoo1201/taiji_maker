@@ -8,6 +8,9 @@ import src.const as const
 
 class Selector:
     def __init__(self, screen, next_scene, *args):
+        if not os.path.exists("levels/"):
+            os.mkdir("levels/")
+
         self.screen = screen
         self.next_scene = next_scene
         self.path = context.path
