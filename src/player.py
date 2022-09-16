@@ -10,16 +10,19 @@ from src.settings import context
 
 class Player:
     def __init__(self, screen, path):
+        context.is_editing = False
+
         self.screen = screen
         self.path = path
         self.drawer = Drawer(screen).set_grid(
             file.get(clipboard.paste()) if path is None else file.reader(path)
         )
+        for row in self.drawer.grid:
+            for sprite in row:
+                sprite.draw()
         self.drag = (None, "")
 
         self.result = ""
-
-        context.is_editing = False
 
     def get_event(self):  # sourcery skip: low-code-quality
         from main import end, select, main

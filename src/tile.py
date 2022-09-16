@@ -93,9 +93,7 @@ class Tile(pygame.sprite.Sprite):
         symbol_image = pygame.image.load(f"resource/symbol/{self.symbol}.png").convert_alpha()
         symbol_image = pygame.transform.scale(symbol_image, (size, size))
         if self.hidden:
-            if not context.is_editing:
-                return
-            transparent(symbol_image, 127)
+            transparent(symbol_image, 127 if context.is_editing else 0)
         if self.color and self.symbol not in const.FLOWER:
             fill(symbol_image, self.color)
         image.blit(symbol_image, (0, 0))

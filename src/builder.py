@@ -11,9 +11,14 @@ from src.settings import context
 
 class Builder:
     def __init__(self, screen, file_name, new_file=False):
+        context.is_editing = True
+
         self.screen = screen
         self.save_path = file_name
         self.drawer = Drawer(screen).set_grid(reader(self.save_path))
+        for row in self.drawer.grid:
+            for sprite in row:
+                sprite.draw()
         self.new_file = new_file
 
         self.save_counter = 0
@@ -30,8 +35,6 @@ class Builder:
             self.color_palette.list.append((surface, color))
 
         self.make_buttons()
-
-        context.is_editing = True
 
     def make_buttons(self):
         self.hidden_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
