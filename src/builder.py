@@ -85,6 +85,11 @@ class Builder:
         ))
         self.play_button = Button(self.play_surface, rect, ("play (ctrl+P)", "playing"))
 
+    def reset_buttons(self):
+        self.hidden_button.selected = 0
+        self.fixed_button.selected = 0
+        self.exist_button.selected = 0
+
     def get_event(self):
         from main import load, end, main
         for event in pygame.event.get():
@@ -124,8 +129,9 @@ class Builder:
 
         if self.symbol_palette.screen.get_rect(topleft=(0, 0)).collidepoint(x, y) and mouse_button == 1:
             i, j = self.symbol_palette.convert_coordinates(x, y)
-            if 0 <= i + j * 3 < len(self.symbol_palette.list):
+            if 0 <= i + j * 3 < len(self.symbol_palette.list) and 0 <= i < 3:
                 self.symbol_palette.selected = i + j * 3
+                self.reset_buttons()
             return
 
         if self.color_palette.screen.get_rect(topright=(context.screen_width, 0)).collidepoint(x, y) \
@@ -142,33 +148,26 @@ class Builder:
         sprite = self.drawer.grid[y][x]
         if mouse_button == 3:
             sprite.exist = True
-            sprite.hidden = False
-            sprite.fixed = False
-            sprite.lit = False
-            symbol = const.NONE
-            color = const.NONE
+            sprite.hidden = sprite.fixed = sprite.lit = False
+            symbol = color = const.NONE
             sprite.change(symbol, color)
             return
         if mouse_button != 1:
             return
 
-        sprite.hidden = self.hidden_button.selected == 1
-        if self.fixed_button.selected == 2:
-            sprite.fixed = True
-            sprite.lit = True
-        elif self.fixed_button.selected == 1:
-            sprite.fixed = True
-            sprite.lit = False
-        else:
-            sprite.fixed = False
-            sprite.lit = False
-        sprite.exist = self.exist_button.selected == 0
-
-        symbol = self.symbol_palette.list[self.symbol_palette.selected][1]
-        color = self.color_palette.list[self.color_palette.selected][1]
-        if symbol in const.FLOWER or symbol == const.NONE:
-            color = const.NONE
-        sprite.change(symbol, color)
+        if self.symbol_palette.selected == -1:
+            sprite.symbol = sprite.color = const.NONE
+            sprite.hidden = self.hidden_button.selected == 1
+            sprite.fixed = self.fixed_button.selected > 0
+            sprite.lit = self.fixed_button.selected == 2
+            sprite.exist = self.exist_button.selected == 0
+            sprite.draw()
+        elif sprite.exist:
+            symbol = self.symbol_palette.get_selection()
+            color = self.color_palette.get_selection()
+            if symbol in const.FLOWER or symbol == const.NONE:
+                color = const.NONE
+            sprite.change(symbol, color)
 
     def run(self):
         result = self.get_event()
@@ -189,6 +188,9 @@ class Builder:
             self.color_palette.screen.get_rect(topright=(context.screen_width, 0))
         )
 
+        if sum((self.hidden_button.selected, self.fixed_button.selected, self.exist_button.selected)) > 0:
+            self.symbol_palette.selected = -1
+
         if self.save_button.selected == 1:
             self.save_button.selected = 0
             self.save()
@@ -197,6 +199,7 @@ class Builder:
         if self.copy_button.selected == 1:
             self.copy_button.selected = 0
             clipboard.copy(encode(self.drawer.grid))
+            self.copy_counter = 60
 
         if self.play_button.selected == 1:
             result = self.play()

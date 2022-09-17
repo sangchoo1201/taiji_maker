@@ -35,7 +35,7 @@ class Palette:
             self.screen.blit(value[0], value[0].get_rect(center=(x, y)))
 
     def get_selection(self):
-        return self.list[self.selected][1]
+        return self.list[self.selected][1] if self.selected >= 0 else None
 
     def convert_coordinates(self, x, y):
         size = context.tile_size

@@ -55,15 +55,23 @@ def writer(path, data):
 def encode(data):
     output = f"{len(data[0])}:"
     repeating_zeros = 0
+    repeating_eights = 0
     for row in data:
         for sprite in row:
-            repeating_zeros, output = encode_single(sprite, repeating_zeros, output)
+            repeating_zeros, repeating_eights, output = \
+                encode_single(sprite, repeating_zeros, repeating_eights, output)
     if repeating_zeros > 2:
         output = output[:-repeating_zeros]
         if repeating_zeros >= 26:
             output += "+Z" * (repeating_zeros // 26)
         if repeating_zeros % 26:
             output += f"+{chr(repeating_zeros % 26 + 64)}"
+    if repeating_eights > 2:
+        output = output[:-repeating_eights]
+        if repeating_eights >= 26:
+            output += "-Z" * (repeating_eights // 26)
+        if repeating_eights % 26:
+            output += f"-{chr(repeating_eights % 26 + 64)}"
     return output
 
 
@@ -71,7 +79,7 @@ colors = dict(zip(const.COLORS, "roygbpkw"))
 colors_reverse = dict(zip("roygbpkw", const.COLORS))
 
 
-def encode_single(sprite, repeating_zeros, output):
+def encode_single(sprite, repeating_zeros, repeating_eights, output):
     symbol = chr(const.SYMBOLS.index(sprite.symbol) + 65) if sprite.symbol else ""
     color = colors[sprite.color] if sprite.color else ""
     option = sprite.fixed * 4 + sprite.lit * 2 + sprite.hidden if sprite.exist else 8
@@ -83,10 +91,20 @@ def encode_single(sprite, repeating_zeros, output):
             if repeating_zeros % 26:
                 output += f"+{chr(repeating_zeros % 26 + 64)}"
         repeating_zeros = 0
+    if symbol or color or option != 8:
+        if repeating_eights > 2:
+            output = output[:-repeating_eights]
+            if repeating_eights >= 26:
+                output += "-Z" * (repeating_eights // 26)
+            if repeating_eights % 26:
+                output += f"-{chr(repeating_eights % 26 + 64)}"
+        repeating_eights = 0
     if option == 0:
         repeating_zeros += 1
+    elif option == 8:
+        repeating_eights += 1
     output += f"{symbol}{color}{option}"
-    return repeating_zeros, output
+    return repeating_zeros, repeating_eights, output
 
 
 def decode(data):
@@ -94,6 +112,8 @@ def decode(data):
     width = int(width)
     data = data.split("+")
     data = data[0] + "".join(map(lambda x: "0" * (ord(x[0]) - 64) + x[1:] if x else x, data[1:]))
+    data = data.split("-")
+    data = data[0] + "".join(map(lambda x: "8" * (ord(x[0]) - 64) + x[1:] if x else x, data[1:]))
     result = [[]]
     i = 0
     while i < len(data):
