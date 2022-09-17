@@ -19,6 +19,7 @@ url = "https://github.com/sangchoo1201/taiji_maker/releases/latest"
 response = requests.get(url)
 if response.status_code != 200:
     print("Failed to get latest version")
+    input("Press Enter to exit...")
     sys.exit()
 
 data = BeautifulSoup(response.text, "html.parser")
@@ -29,6 +30,7 @@ path = '//*[@id="repo-content-pjax-container"]/div/div/div/div[1]/div[2]/div[1]/
 latest_version = xpath.xpath(path)[0].text
 if version == latest_version:
     print("Already up-to-date")
+    input("Press Enter to exit...")
     sys.exit()
 
 # get download url
@@ -40,6 +42,7 @@ for i in (1, 2):
         break
 else:
     print("Failed to get download url")
+    input("Press Enter to exit...")
     sys.exit()
 
 # download zip file
