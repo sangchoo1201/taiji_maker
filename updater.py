@@ -1,36 +1,45 @@
 import os
 import sys
-
-import requests
 import zipfile
 
+import requests
+from bs4 import BeautifulSoup
+from lxml import etree
 
 # load previous version
-if not os.path.exists("updater.log"):
-    with open("updater.log", "w") as f:
+if not os.path.exists("downloader.log"):
+    with open("downloader.log", "w") as f:
         f.write("")
-    version = ""
-else:
-    with open("updater.log", "r") as f:
-        version = f.read()
+with open("downloader.log", "r") as f:
+    version = f.read()
 
 # get latest version
 print("Checking for updates...")
-url = "https://api.github.com/repos/sangchoo1201/taiji_maker/releases/latest"
+url = "https://github.com/sangchoo1201/taiji_maker/releases/latest"
 response = requests.get(url)
-data = response.json()
+if response.status_code != 200:
+    print("Failed to get latest version")
+    sys.exit()
+
+data = BeautifulSoup(response.text, "html.parser")
+xpath = etree.HTML(str(data))
 
 # check if update is needed
-if version == data["name"]:
+path = '//*[@id="repo-content-pjax-container"]/div/div/div/div[1]/div[2]/div[1]/h1'
+latest_version = xpath.xpath(path)[0].text
+if version == latest_version:
     print("Already up-to-date")
     sys.exit()
 
 # get download url
 print("Downloading ZIP...")
-url = next((asset["browser_download_url"] for asset in data["assets"] if asset["name"] == "taiji_maker.zip"), "")
-
-if not url:
-    print("No zip file found")
+for i in (1, 2):
+    path = f'//*[@id="repo-content-pjax-container"]/div/div/div/div[2]/div[1]/details/div/div/ul/li[{i}]/div[1]/a'
+    url = "https://github.com/" + xpath.xpath(path)[0].attrib["href"]
+    if url.endswith("taiji_maker.zip"):
+        break
+else:
+    print("Failed to get download url")
     sys.exit()
 
 # download zip file
@@ -38,23 +47,13 @@ response = requests.get(url)
 with open("temp.zip", "wb") as f:
     f.write(response.content)
 
-
-# make a backup of main.exe
-print("Backing up main.exe...")
-with open("main.exe", "rb") as f:
-    main = f.read()
-
-with open("backup.exe", "wb") as f:
-    f.write(main)
-
-# delete current main.exe
-print("Deleting main.exe...")
-os.remove("main.exe")
-
 # extract zip file
 print("Extracting ZIP...")
+if not os.path.exists("taiji_maker"):
+    os.mkdir("taiji_maker")
+
 taiji_maker_zip = zipfile.ZipFile("temp.zip")
-taiji_maker_zip.extract("main.exe")
+taiji_maker_zip.extractall(f"{os.getcwd()}/taiji_maker")
 
 # delete zip file
 print("Deleting ZIP...")
@@ -63,6 +62,7 @@ os.remove("temp.zip")
 
 # save latest version
 with open("updater.log", "w") as f:
-    f.write(data["name"])
+    f.write(latest_version)
 
 print("Update complete")
+input("Press Enter to exit...")
