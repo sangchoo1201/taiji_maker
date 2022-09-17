@@ -61,7 +61,7 @@ taiji_maker_zip.close()
 os.remove("temp.zip")
 
 # save latest version
-with open("updater.log", "w") as f:
+with open("downloader.log", "w") as f:
     f.write(latest_version)
 
 print("Update complete")
