@@ -22,9 +22,6 @@ class Builder:
         else:
             self.save_path = file_name
             self.drawer = Drawer(screen).set_grid(reader(self.save_path))
-        for row in self.drawer.grid:
-            for sprite in row:
-                sprite.draw()
         self.new_file = new_file
 
         self.save_counter = 0
@@ -43,46 +40,25 @@ class Builder:
         self.make_buttons()
 
     def make_buttons(self):
-        self.hidden_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
-        rect = self.hidden_surface.get_rect(center=(
-            context.screen_width // 2 - context.tile_size * 3.1,
-            context.screen_height - context.tile_size * 0.8
-        ))
+        size = (3 * context.tile_size, context.tile_size)
+        rect = pygame.Rect(0, 0, *size)
+
+        self.hidden_surface = pygame.Surface(size)
         self.hidden_button = Button(self.hidden_surface, rect, ("not hidden", "hidden"))
 
-        self.fixed_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
-        rect = self.fixed_surface.get_rect(center=(
-            context.screen_width // 2,
-            context.screen_height - context.tile_size * 0.8
-        ))
+        self.fixed_surface = pygame.Surface(size)
         self.fixed_button = Button(self.fixed_surface, rect, ("not fixed", "fixed (not lit)", "fixed (lit)"))
 
-        self.exist_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
-        rect = self.exist_surface.get_rect(center=(
-            context.screen_width // 2 + context.tile_size * 3.1,
-            context.screen_height - context.tile_size * 0.8
-        ))
+        self.exist_surface = pygame.Surface(size)
         self.exist_button = Button(self.exist_surface, rect, ("exist", "not exist"))
 
-        self.save_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
-        rect = self.save_surface.get_rect(center=(
-            context.screen_width - context.tile_size * 1.8,
-            context.tile_size * 0.8
-        ))
+        self.save_surface = pygame.Surface(size)
         self.save_button = Button(self.save_surface, rect, ("save (ctrl+S)", "saved"))
 
-        self.copy_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
-        rect = self.copy_surface.get_rect(center=(
-            context.screen_width - context.tile_size * 1.8,
-            context.tile_size * 1.8
-        ))
+        self.copy_surface = pygame.Surface(size)
         self.copy_button = Button(self.copy_surface, rect, ("copy (ctrl+C)", "copied"))
 
-        self.play_surface = pygame.Surface((context.tile_size * 3, context.tile_size))
-        rect = self.play_surface.get_rect(center=(
-            context.screen_width - context.tile_size * 1.8,
-            context.tile_size * 2.8
-        ))
+        self.play_surface = pygame.Surface(size)
         self.play_button = Button(self.play_surface, rect, ("play (ctrl+P)", "playing"))
 
     def reset_buttons(self):
@@ -97,6 +73,7 @@ class Builder:
                 return end
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.handle_mouse(event.button)
+                self.click_tile(event.button, True)
             if event.type != pygame.KEYDOWN:
                 continue
             if event.key == pygame.K_ESCAPE:
@@ -142,32 +119,77 @@ class Builder:
                 self.color_palette.selected = i + j * 3
             return
 
-        x, y = self.drawer.convert_coordinates(x, y)
+    def click_tile(self, mouse_button, button_down=False):
+        x, y = self.drawer.convert_coordinates(*pygame.mouse.get_pos())
         if x < 0 or x >= self.drawer.width or y < 0 or y >= self.drawer.height:
             return
+
         sprite = self.drawer.grid[y][x]
         if mouse_button == 3:
             sprite.exist = True
-            sprite.hidden = sprite.fixed = sprite.lit = False
+            sprite.hidden = False
             symbol = color = const.NONE
             sprite.change(symbol, color)
+            self.visit(x, y)
             return
         if mouse_button != 1:
             return
 
+        connect_map = {pygame.K_a: (-1, 0), pygame.K_d: (1, 0), pygame.K_w: (0, -1), pygame.K_s: (0, 1)}
+        if any(pygame.key.get_pressed()[key] for key in connect_map) and button_down:
+            for key, (dx, dy) in connect_map.items():
+                if pygame.key.get_pressed()[key]:
+                    self.connect(x, y, dx, dy)
+            return
+
         if self.symbol_palette.selected == -1:
-            sprite.symbol = sprite.color = const.NONE
-            sprite.hidden = self.hidden_button.selected == 1
-            sprite.fixed = self.fixed_button.selected > 0
-            sprite.lit = self.fixed_button.selected == 2
             sprite.exist = self.exist_button.selected == 0
-            sprite.draw()
+            if sprite.exist:
+                sprite.hidden = self.hidden_button.selected == 1 and sprite.symbol
+                sprite.fixed = self.fixed_button.selected > 0
+                sprite.lit = self.fixed_button.selected == 2
+            else:
+                sprite.symbol = sprite.color = const.NONE
+                sprite.hidden = sprite.fixed = sprite.lit = False
+            self.visit(x, y)
         elif sprite.exist:
             symbol = self.symbol_palette.get_selection()
             color = self.color_palette.get_selection()
             if symbol in const.FLOWER or symbol == const.NONE:
                 color = const.NONE
             sprite.change(symbol, color)
+
+    def connect(self, x, y, dx, dy, cut=False):
+        width, height = self.drawer.width, self.drawer.height
+        sprite = self.drawer.grid[y][x]
+        if not sprite.exist:
+            return
+        direction_number = const.DIRECTIONS.index((dx, dy))
+        if not (0 <= x + dx < width and 0 <= y + dy < height):
+            return
+        other = self.drawer.grid[y + dy][x + dx]
+        if sprite.connected[direction_number] and other.connected[direction_number ^ 1] or cut:
+            sprite.connected[direction_number] = other.connected[direction_number ^ 1] = False
+            return
+        other.exist = True
+        other.fixed = sprite.fixed
+        other.lit = sprite.lit
+        sprite.connected[direction_number] = other.connected[direction_number ^ 1] = True
+
+    def visit(self, x, y, visited=None):
+        sprite = self.drawer.grid[y][x]
+        if visited is None:
+            visited = set()
+        for dx, dy in (j for i, j in enumerate(const.DIRECTIONS) if sprite.connected[i]):
+            if not 0 <= x + dx < self.drawer.width or not 0 <= y + dy < self.drawer.height:
+                continue
+            if (x + dx, y + dy) not in visited:
+                visited.add((x + dx, y + dy))
+                other = self.drawer.grid[y + dy][x + dx]
+                other.exist = sprite.exist
+                other.fixed = sprite.fixed
+                other.lit = sprite.lit
+                self.visit(x + dx, y + dy, visited)
 
     def run(self):
         result = self.get_event()
@@ -187,6 +209,11 @@ class Builder:
             self.color_palette.screen,
             self.color_palette.screen.get_rect(topright=(context.screen_width, 0))
         )
+
+        if pygame.mouse.get_pressed()[0]:
+            self.click_tile(1)
+        if pygame.mouse.get_pressed()[2]:
+            self.click_tile(3)
 
         if sum((self.hidden_button.selected, self.fixed_button.selected, self.exist_button.selected)) > 0:
             self.symbol_palette.selected = -1
@@ -220,6 +247,14 @@ class Builder:
             text = font.render("Saved!" if self.save_counter > 0 else "Copied!", True, const.WHITE).convert_alpha()
             text.set_alpha(255 * min(self.save_counter + self.copy_counter, 30) // 30)
             self.screen.blit(text, text.get_rect(center=(context.screen_width // 2, context.tile_size)))
+
+        font = pygame.font.Font("resource/font/D2Coding.ttf", 24)
+        text = font.render("W/A/S/D + Left Click:", True, const.WHITE)
+        rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size // 2))
+        self.screen.blit(text, rect)
+        text = font.render("connect tiles (make big tile)", True, const.WHITE)
+        rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size))
+        self.screen.blit(text, rect)
 
         for i, button in enumerate((self.hidden_button, self.fixed_button, self.exist_button)):
             button.draw()

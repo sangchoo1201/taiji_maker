@@ -16,9 +16,6 @@ class Drawer:
         self.grid = grid.copy()
         self.height = len(grid)
         self.width = len(grid[0]) if grid else 0
-        for row in self.grid:
-            for sprite in row:
-                sprite.draw()
         return self
 
     def resize(self, dx, dy):
@@ -39,6 +36,11 @@ class Drawer:
         x_pos = int(context.screen_width // 2 + (x - (self.width - 1) / 2) * size)
         y_pos = int(context.screen_height // 2 + (y - (self.height - 1) / 2) * size)
         sprite.locate(x_pos, y_pos)
+        sprite.draw()
+        width, height = len(self.grid[-1]), len(self.grid)
+        neighbors = [self.grid[y + dy][x + dx] if height > y + dy >= 0 <= x + dx < width else None
+                     for dx, dy in const.DIRECTIONS]
+        sprite.corner(neighbors)
         self.screen.blit(sprite.image, sprite.rect)
 
     def convert_coordinates(self, x, y):
