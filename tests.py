@@ -154,6 +154,7 @@ def run():
 
 #solver.solve(decode('6:0Sy00Ak00Cp0Sy0Ck0Sy0Cp0Sw4Sr00Sy+FSr6Dp00Sy+DSw6Sy00Sy0Ak0Jk0Sw0Sw6Sy0Dp0'))
 run()
+input()
 
 '010001110101000111011100001100100111'
     
