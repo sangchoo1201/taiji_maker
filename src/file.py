@@ -154,5 +154,5 @@ def connect(grid, width, connected):
 def get(data):
     try:
         return decode(data)
-    except Exception as e:
+    except Exception:
         return [[Tile() for _ in range(5)] for _ in range(5)]
