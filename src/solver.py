@@ -102,9 +102,9 @@ class Solver:
             return True
         for x2, y2 in self.remainder:
             sprite = self.grid[x2][y2]
-            if sprite.symbol <= 9 and color == sprite.color and self.match_lit(x, y, x2, y2) != False:
+            if sprite.symbol <= 9 and color == sprite.color and self.match_lit(x, y, x2, y2) is not False:
                 extra_count += sprite.symbol
-            if sprite.symbol < 0 and color == sprite.color and self.match_lit(x, y, x2, y2) != False:
+            if sprite.symbol < 0 and color == sprite.color and self.match_lit(x, y, x2, y2) is not False:
                 neg_count += -sprite.symbol
         return len(area) < dot_count + extra_count or neg_count >= dot_count
 
