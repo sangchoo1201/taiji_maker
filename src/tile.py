@@ -58,7 +58,7 @@ class Tile(pygame.sprite.Sprite):
         return self
 
     def get_state(self):
-        return self.color, self.symbol, self.lit, self.fixed, self.hidden, self.exist, self.marked, (*self.connected)
+        return self.color, self.symbol, self.lit, self.fixed, self.hidden, self.exist, self.marked, *self.connected
 
     def draw(self, lit_color=const.LIT, dark_color=const.GRAY):
         if self.prev == self.get_state():
