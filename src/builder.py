@@ -261,9 +261,8 @@ class Builder:
 
         if self.scroll_button_l.selected == 1 or self.scroll_button_r.selected == 1:
             self.sol_index += 1 if self.scroll_button_r.selected == 1 else -1
-            self.scroll_button_l = self.scroll_button_r = 0
+            self.scroll_button_l.selected = self.scroll_button_r.selected = 0
             if 0 <= self.sol_index < len(self.solver.solutions) and self.solver.terminate:
-                self.sol_index -= 1
                 sol = self.solver.solutions[self.sol_index]
                 for x, y in itertools.product(range(len(sol)), range(len(sol[0]))):
                     self.drawer.grid[x][y].lit = sol[x][y]
@@ -306,7 +305,7 @@ class Builder:
         for i, button in enumerate((self.save_button, self.copy_button, self.play_button)):
             button.draw()
             x = context.screen_width - context.tile_size * 1.8
-            y = context.screen_height - context.tile_size * (i * 1.1 + 0.8)
+            y = context.tile_size * (i * 1.1 + 0.8)
             button.rect = button.screen.get_rect(center=(x, y))
 
             self.screen.blit(button.screen, button.rect)
@@ -315,7 +314,7 @@ class Builder:
             if self.sol_index > 0:
                 button = self.scroll_button_l
                 button.draw()
-                x = context.screen_width // 2 - context.tile_size * 4.5 * 1.2
+                x = context.screen_width // 2 + context.tile_size * 4.5 * 1.2
                 y = context.screen_height - context.tile_size * 0.8
                 button.rect = button.screen.get_rect(center=(x, y))
 
