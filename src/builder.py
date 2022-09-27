@@ -9,7 +9,8 @@ from src.palette import Palette
 from src.settings import context
 from src.textbox import TextBox
 from src.player import Player
-
+from src.solver import Solver
+import threading
 
 class Builder:
     def __init__(self, screen, file_name="", new_file=False):
@@ -37,6 +38,10 @@ class Builder:
             surface.fill(color)
             self.color_palette.list.append((surface, color))
 
+        self.solver = Solver()
+
+        self.sol_index = 0
+
         self.make_buttons()
 
     def make_buttons(self):
@@ -61,10 +66,23 @@ class Builder:
         self.play_surface = pygame.Surface(size)
         self.play_button = Button(self.play_surface, rect, ("play (ctrl+P)", "playing"))
 
+        self.solve_surface = pygame.Surface(size)
+        self.solve_button = Button(self.solve_surface, rect, ("solve", "solving"))
+
+        rect_sq = pygame.Rect(0, 0, context.tile_size, context.tile_size)
+        
+        self.scroll_surface_l = pygame.Surface((context.tile_size, context.tile_size))
+        self.scroll_button_l = Button(self.scroll_surface_l, rect_sq, ("<", "<"))
+
+        self.scroll_surface_r = pygame.Surface((context.tile_size, context.tile_size))
+        self.scroll_button_r = Button(self.scroll_surface_r, rect_sq, (">", ">"))
+
+
     def reset_buttons(self):
         self.hidden_button.selected = 0
         self.fixed_button.selected = 0
         self.exist_button.selected = 0
+        self.solve_button.selected = 0
 
     def get_event(self):
         from main import load, end, main
@@ -89,17 +107,26 @@ class Builder:
                     return result
             if event.key == pygame.K_UP:
                 self.drawer.resize(0, -1)
+                self.solver.solutions = []
+                self.solver.terminate = True
             if event.key == pygame.K_DOWN:
                 self.drawer.resize(0, 1)
+                self.solver.solutions = []
+                self.solver.terminate = True
             if event.key == pygame.K_LEFT:
                 self.drawer.resize(-1, 0)
+                self.solver.solutions = []
+                self.solver.terminate = True
             if event.key == pygame.K_RIGHT:
                 self.drawer.resize(1, 0)
+                self.solver.solutions = []
+                self.solver.terminate = True
 
     def handle_mouse(self, mouse_button):
         x, y = pygame.mouse.get_pos()
         for button in (self.hidden_button, self.fixed_button, self.exist_button,
-                       self.save_button, self.copy_button, self.play_button):
+                       self.save_button, self.copy_button, self.play_button, self.solve_button,
+                       self.scroll_button_l, self.scroll_button_r):
             if button.rect.collidepoint(x, y) and mouse_button == 1:
                 button.click()
                 return
@@ -123,7 +150,13 @@ class Builder:
         x, y = self.drawer.convert_coordinates(*pygame.mouse.get_pos())
         if x < 0 or x >= self.drawer.width or y < 0 or y >= self.drawer.height:
             return
-
+        self.solver.solutions = []
+        self.solver.terminate = True
+        for x2 in range(self.drawer.height):
+            for y2 in range(self.drawer.width):
+                sprite = self.drawer.grid[x2][y2]
+                if not sprite.fixed:
+                    sprite.lit = False
         sprite = self.drawer.grid[y][x]
         if mouse_button == 3:
             sprite.exist = True
@@ -233,6 +266,33 @@ class Builder:
             if result is not None:
                 return result
 
+        if self.solve_button.selected == 1:
+            if self.solver.terminate:
+                thread = threading.Thread(target=lambda: self.solver.solve(self.drawer.grid))
+                thread.start()
+                self.sol_index = 0
+            else:
+                self.solver.terminate = True
+            self.solve_button.selected = 0
+
+        if self.scroll_button_l.selected == 1:
+            self.scroll_button_l.selected = 0
+            if self.sol_index > 0 and self.solver.terminate:
+                self.sol_index -= 1
+                sol = self.solver.solutions[self.sol_index]
+                for x in range(len(sol)):
+                    for y in range(len(sol[0])):
+                        self.drawer.grid[x][y].lit = sol[x][y]
+
+        if self.scroll_button_r.selected == 1:
+            self.scroll_button_r.selected = 0
+            if self.sol_index < len(self.solver.solutions) - 1 and self.solver.terminate:
+                self.sol_index += 1
+                sol = self.solver.solutions[self.sol_index]
+                for x in range(len(sol)):
+                    for y in range(len(sol[0])):
+                        self.drawer.grid[x][y].lit = sol[x][y]
+
         if self.save_counter > self.copy_counter:
             self.copy_counter = 0
         else:
@@ -256,10 +316,10 @@ class Builder:
         rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size))
         self.screen.blit(text, rect)
 
-        for i, button in enumerate((self.hidden_button, self.fixed_button, self.exist_button)):
+        for i, button in enumerate((self.hidden_button, self.fixed_button, self.exist_button, self.solve_button)):
             button.draw()
             button.rect = button.screen.get_rect(center=(
-                context.screen_width // 2 + context.tile_size * (i - 1) * 3.1,
+                context.screen_width // 2 + context.tile_size * (i - 2) * 3.1,
                 context.screen_height - context.tile_size * 0.8
             ))
             self.screen.blit(button.screen, button.rect)
@@ -272,6 +332,31 @@ class Builder:
             ))
             self.screen.blit(button.screen, button.rect)
 
+        if self.solver.solutions and self.solver.terminate:
+            if self.sol_index > 0:
+                button = self.scroll_button_l
+                button.draw()
+                button.rect = button.screen.get_rect(center=(
+                    context.screen_width // 2 + context.tile_size * 4.5 * 1.2,
+                    context.screen_height - context.tile_size * 0.8
+                ))
+                self.screen.blit(button.screen, button.rect)
+            if self.sol_index < len(self.solver.solutions) - 1:
+                button = self.scroll_button_r
+                button.draw()
+                button.rect = button.screen.get_rect(center=(
+                    context.screen_width // 2 + context.tile_size * 5.5 * 1.2,
+                    context.screen_height - context.tile_size * 0.8
+                ))
+                self.screen.blit(button.screen, button.rect)
+                
+        font = pygame.font.Font("resource/font/D2Coding.ttf", 24)
+        text = font.render(str(self.sol_index + 1) + "/" + str(len(self.solver.solutions)), True, const.WHITE)
+        rect = text.get_rect(topleft=(
+            context.screen_width - context.tile_size * 2.2,
+            context.screen_height - context.tile_size * 2.2))
+        self.screen.blit(text, rect)
+                
         pygame.display.update()
         context.clock.tick(60)
 
