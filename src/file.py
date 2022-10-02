@@ -85,6 +85,8 @@ def encode_single(sprite, repeating_zeros, repeating_eights, output):
     symbol = chr(const.SYMBOLS.index(sprite.symbol) + 65) if sprite.symbol else ""
     color = colors[sprite.color] if sprite.color else ""
     option = sprite.fixed * 4 + sprite.lit * 2 + sprite.hidden if sprite.exist else 8
+    if not sprite.fixed:
+        option &= 0b1101
     if any((symbol, color, connected, (option != 8 and repeating_eights), (option and repeating_zeros))):
         repeat = repeating_zeros + repeating_eights
         if repeat > 2:
@@ -132,6 +134,8 @@ def decode(data):
             sprite.lit = option % 4 // 2
             sprite.hidden = option % 2
             sprite.exist = option != 8
+            if not sprite.fixed:
+                sprite.lit = 0
         i += 1
         if len(result[-1]) == width:
             result.append([])
