@@ -93,17 +93,23 @@ class Checker:
 
     def check_dot(self, area):
         color = None
-        dot_count = 0
+        dot_lower, dot_higher = 0, 0
         for x, y in area:
             sprite = self.grid[x][y]
-            if sprite.symbol not in const.DOT[1:] or not sprite.exist:
+            if sprite.symbol not in const.DOT[1:] + const.BIG_DOT or not sprite.exist:
                 continue
             if color is None:
                 color = sprite.color
             if color != sprite.color:
                 return False
-            dot_count += sprite.symbol
-        return dot_count in (0, len(area))
+
+            if sprite.symbol in const.DOT:
+                dot_lower += sprite.symbol
+                dot_higher += sprite.symbol
+            if sprite.symbol in const.BIG_DOT:
+                dot_lower += sprite.symbol - 30
+                dot_higher += (sprite.symbol - 30) * 2
+        return dot_lower == dot_higher == 0 or dot_lower <= len(area) <= dot_higher
 
     def check_line(self, areas):  # sourcery skip: dict-assign-update-to-union
         shapes = {}

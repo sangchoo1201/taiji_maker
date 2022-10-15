@@ -82,7 +82,12 @@ colors_reverse = dict(zip("roygbpkw", const.COLORS))
 
 def encode_single(sprite, repeating_zeros, repeating_eights, output):
     connected = (("", "<"), ("^", "/"))[sprite.connected[2]][sprite.connected[0]] if sprite.exist else ""
-    symbol = chr(const.SYMBOLS.index(sprite.symbol) + 65) if sprite.symbol else ""
+    if not sprite.symbol:
+        symbol = ""
+    elif 30 < sprite.symbol <= 39:
+        symbol = chr(const.CUSTOM_SYMBOLS.index(sprite.symbol) + 912)
+    else:
+        symbol = chr(const.SYMBOLS.index(sprite.symbol) + 65)
     color = colors[sprite.color] if sprite.color else ""
     option = sprite.fixed * 4 + sprite.lit * 2 + sprite.hidden if sprite.exist else 8
     if not sprite.fixed:
@@ -125,6 +130,9 @@ def decode(data):
                 i += 1
             if 65 <= ord(data[i]) <= 90:
                 sprite.symbol = const.SYMBOLS[ord(data[i]) - 65]
+                i += 1
+            if 913 <= ord(data[i]) <= 937:
+                sprite.symbol = const.CUSTOM_SYMBOLS[ord(data[i]) - 912]
                 i += 1
             if data[i] in colors_reverse:
                 sprite.color = colors_reverse[data[i]]

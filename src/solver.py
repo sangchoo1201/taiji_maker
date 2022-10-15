@@ -79,26 +79,32 @@ class Solver:
 
     def check_dot(self, area, open_region):
         color = None
-        dot_count = 0
+        higher_count, lower_count = 0, 0
         extra_count = 0
         neg_count = 0
         x = y = None
         for x, y in area:
             sprite = self.grid[x][y]
-            if sprite.symbol == 0 or sprite.symbol > 9:
+            if sprite.symbol not in const.DOT[1:] + const.BIG_DOT:
                 continue
             if color is None:
                 color = sprite.color
             if color != sprite.color:
                 return False
-            dot_count += sprite.symbol
-            if sprite.symbol < 0:
-                neg_count += -sprite.symbol
-        if dot_count == 0:
+
+            if sprite.symbol in const.DOT:
+                lower_count += sprite.symbol
+                higher_count += sprite.symbol
+                if sprite.symbol < 0:
+                    neg_count += -sprite.symbol
+            if sprite.symbol in const.BIG_DOT:
+                lower_count += sprite.symbol - 30
+                higher_count += (sprite.symbol - 30) * 2
+        if lower_count == higher_count == 0:
             return True
         if not open_region:
-            return dot_count == len(area)
-        if len(area) <= dot_count:
+            return lower_count <= len(area) <= higher_count
+        if len(area) <= higher_count:
             return True
         for x2, y2 in self.remainder:
             sprite = self.grid[x2][y2]
@@ -106,7 +112,7 @@ class Solver:
                 extra_count += sprite.symbol
             if sprite.symbol < 0 and color == sprite.color and self.match_lit(x, y, x2, y2) is not False:
                 neg_count += -sprite.symbol
-        return len(area) < dot_count + extra_count or neg_count >= dot_count
+        return len(area) < higher_count + extra_count or neg_count >= lower_count
 
     def match_lit(self, x1, y1, x2, y2):
         if not 0 <= y2 < self.width or not 0 <= x2 < self.height:

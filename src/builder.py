@@ -33,6 +33,12 @@ class Builder:
         self.symbol_palette = Palette(250, 26)
         self.symbol_palette.list = [(pygame.image.load(f"resource/symbol/{i}.png"), i) for i in const.SYMBOLS]
 
+        self.custom_palette = Palette(250, 9)
+        self.custom_palette.list = [(pygame.image.load(f"resource/symbol/{i}.png"), i) for i in const.CUSTOM_SYMBOLS]
+
+        self.palettes = [self.symbol_palette, self.custom_palette]
+        self.selected_palette = 0
+
         self.color_palette = Palette(250, 0)
         size = context.tile_size
         for color in const.COLORS:
@@ -106,6 +112,8 @@ class Builder:
                 result = self.play()
                 if result is not None:
                     return result
+            if event.key == pygame.K_TAB:
+                self.selected_palette = not self.selected_palette
             directions = {pygame.K_UP: (0, -1), pygame.K_DOWN: (0, 1), pygame.K_LEFT: (-1, 0), pygame.K_RIGHT: (1, 0)}
             if event.key in directions:
                 self.drawer.resize(*directions[event.key])
@@ -121,10 +129,11 @@ class Builder:
                 button.click()
                 return
 
-        if self.symbol_palette.screen.get_rect(topleft=(0, 0)).collidepoint(x, y) and mouse_button == 1:
-            i, j = self.symbol_palette.convert_coordinates(x, y)
-            if 0 <= i + j * 3 < len(self.symbol_palette.list) and 0 <= i < 3:
-                self.symbol_palette.selected = i + j * 3
+        palette = self.palettes[self.selected_palette]
+        if palette.screen.get_rect(topleft=(0, 0)).collidepoint(x, y) and mouse_button == 1:
+            i, j = palette.convert_coordinates(x, y)
+            if 0 <= i + j * 3 < len(palette.list) and 0 <= i < 3:
+                palette.selected = i + j * 3
                 self.reset_buttons()
             return
 
@@ -163,7 +172,8 @@ class Builder:
                 if pygame.key.get_pressed()[key]:
                     self.connect(x, y, dx, dy)
             return
-        if self.symbol_palette.selected == -1:
+        palette = self.palettes[self.selected_palette]
+        if palette.selected == -1:
             sprite.exist = self.exist_button.selected == 0
             if sprite.exist:
                 sprite.hidden = self.hidden_button.selected == 1 and sprite.symbol
@@ -174,7 +184,7 @@ class Builder:
                 sprite.hidden = sprite.fixed = sprite.lit = False
             self.visit(x, y)
         elif sprite.exist:
-            symbol = self.symbol_palette.get_selection()
+            symbol = palette.get_selection()
             color = self.color_palette.get_selection()
             if symbol in const.FLOWER or symbol == const.NONE:
                 color = const.NONE
@@ -219,9 +229,10 @@ class Builder:
 
         self.screen.fill(const.DARK)
         self.drawer.draw()
-        self.symbol_palette.draw()
-        rect = self.symbol_palette.screen.get_rect(topleft=(0, 0))
-        self.screen.blit(self.symbol_palette.screen, rect)
+        palette = self.palettes[self.selected_palette]
+        palette.draw()
+        rect = palette.screen.get_rect(topleft=(0, 0))
+        self.screen.blit(palette.screen, rect)
 
         self.color_palette.draw()
         rect = self.color_palette.screen.get_rect(topright=(context.screen_width, 0))
@@ -233,7 +244,7 @@ class Builder:
             self.click_tile(3)
 
         if sum((self.hidden_button.selected, self.fixed_button.selected, self.exist_button.selected)) > 0:
-            self.symbol_palette.selected = -1
+            palette.selected = -1
 
         if self.save_button.selected == 1:
             self.save_button.selected = 0
@@ -285,13 +296,17 @@ class Builder:
             text.set_alpha(255 * min(self.save_counter + self.copy_counter, 30) // 30)
             self.screen.blit(text, text.get_rect(center=(context.screen_width // 2, context.tile_size)))
 
-        font = pygame.font.Font("resource/font/D2Coding.ttf", 24)
+        font = pygame.font.Font("resource/font/D2Coding.ttf", 20)
         text = font.render("W/A/S/D + Left Click:", True, const.WHITE)
-        rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size // 2))
+        rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size // 4))
         self.screen.blit(text, rect)
 
         text = font.render("connect tiles (make big tile)", True, const.WHITE)
-        rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size))
+        rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size // 8 * 5))
+        self.screen.blit(text, rect)
+
+        text = font.render("TAB: change symbol palette", True, const.WHITE)
+        rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size // 4 * 5))
         self.screen.blit(text, rect)
 
         for i, button in enumerate((self.hidden_button, self.fixed_button, self.exist_button, self.solve_button)):

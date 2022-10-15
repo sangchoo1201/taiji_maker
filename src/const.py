@@ -25,4 +25,8 @@ NONE = 0
 
 SYMBOLS = DOT[1:10] + DOT[-1:-10:-1] + [DIAMOND, DASH, SLASH, *FLOWER] + [NONE]
 
+BIG_DOT = [31, 32, 33, 34, 35, 36, 37, 38, 39]
+
+CUSTOM_SYMBOLS = BIG_DOT + [NONE]
+
 DIRECTIONS = ((-1, 0), (1, 0), (0, -1), (0, 1))
