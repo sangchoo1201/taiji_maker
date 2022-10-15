@@ -19,11 +19,20 @@ class Drawer:
         return self
 
     def resize(self, dx, dy):
-        self.width += dx
-        self.height += dy
-        self.width = max(self.width, 1)
-        self.height = max(self.height, 1)
-        self.grid = [[Tile() for _ in range(self.width)] for _ in range(self.height)]
+        if dx < 0 and self.width > 1:
+            for row in self.grid:
+                row.pop()
+            self.width -= 1
+        if dx > 0:
+            for row in self.grid:
+                row.append(Tile())
+            self.width += 1
+        if dy < 0 and self.height > 1:
+            self.grid.pop()
+            self.height -= 1
+        if dy > 0:
+            self.grid.append([Tile() for _ in range(self.width)])
+            self.height += 1
         return self
 
     def draw(self):
