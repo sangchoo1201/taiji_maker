@@ -11,6 +11,7 @@ from src.settings import context
 from src.textbox import TextBox
 from src.player import Player
 from src.solver import Solver
+from src.generator import Generator
 import threading
 
 
@@ -47,6 +48,7 @@ class Builder:
             self.color_palette.list.append((surface, color))
 
         self.solver = Solver()
+        self.generator = Generator(self.drawer.grid)
 
         self.sol_index = 0
 
@@ -77,6 +79,9 @@ class Builder:
         self.solve_surface = pygame.Surface(size)
         self.solve_button = Button(self.solve_surface, rect, ("solve", "solving"))
 
+        self.gen_surface = pygame.Surface(size)
+        self.gen_button = Button(self.solve_surface, rect, ("generate", "generating"))
+
         rect_sq = pygame.Rect(0, 0, context.tile_size, context.tile_size)
         
         self.scroll_surface_l = pygame.Surface((context.tile_size, context.tile_size))
@@ -90,6 +95,7 @@ class Builder:
         self.fixed_button.selected = 0
         self.exist_button.selected = 0
         self.solve_button.selected = 0
+        self.gen_button.selected = 0
 
     def get_event(self):
         from main import load, end, main
@@ -119,12 +125,14 @@ class Builder:
                 self.drawer.resize(*directions[event.key])
                 self.solver.solutions = []
                 self.solver.terminate = True
+                self.generator.terminate = True
 
     def handle_mouse(self, mouse_button):
         x, y = pygame.mouse.get_pos()
         for button in (self.hidden_button, self.fixed_button, self.exist_button,
                        self.save_button, self.copy_button, self.play_button,
-                       self.solve_button, self.scroll_button_l, self.scroll_button_r):
+                       self.solve_button, self.scroll_button_l, self.scroll_button_r,
+                       self.gen_button):
             if button.rect.collidepoint(x, y) and mouse_button == 1:
                 button.click()
                 return
@@ -151,6 +159,7 @@ class Builder:
             return
         self.solver.solutions = []
         self.solver.terminate = True
+        self.generator.terminate = True
         for x2, y2 in itertools.product(range(self.drawer.height), range(self.drawer.width)):
             sprite = self.drawer.grid[x2][y2]
             if not sprite.fixed:
@@ -270,6 +279,14 @@ class Builder:
                 self.solver.terminate = True
             self.solve_button.selected = 0
 
+        if self.gen_button.selected == 1:
+            if self.generator.terminate:
+                thread = threading.Thread(target=lambda: self.generator.generate())
+                thread.start()
+            else:
+                self.generator.terminate = True
+            self.gen_button.selected = 0
+
         if self.scroll_button_l.selected == 1 or self.scroll_button_r.selected == 1:
             self.sol_index += 1 if self.scroll_button_r.selected == 1 else -1
             self.scroll_button_l.selected = self.scroll_button_r.selected = 0
@@ -309,7 +326,7 @@ class Builder:
         rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size // 4 * 5))
         self.screen.blit(text, rect)
 
-        for i, button in enumerate((self.hidden_button, self.fixed_button, self.exist_button, self.solve_button)):
+        for i, button in enumerate((self.hidden_button, self.fixed_button, self.exist_button, self.gen_button, self.solve_button)):
             button.draw()
             x = context.screen_width // 2 + context.tile_size * (i - 2) * 3.1
             y = context.screen_height - context.tile_size * 0.8
@@ -330,7 +347,7 @@ class Builder:
                 button = self.scroll_button_l
                 button.draw()
                 x = context.screen_width // 2 + context.tile_size * 4.5 * 1.2
-                y = context.screen_height - context.tile_size * 0.8
+                y = context.screen_height - context.tile_size * 3
                 button.rect = button.screen.get_rect(center=(x, y))
 
                 self.screen.blit(button.screen, button.rect)
@@ -338,7 +355,7 @@ class Builder:
                 button = self.scroll_button_r
                 button.draw()
                 x = context.screen_width // 2 + context.tile_size * 5.5 * 1.2
-                y = context.screen_height - context.tile_size * 0.8
+                y = context.screen_height - context.tile_size * 3
                 button.rect = button.screen.get_rect(center=(x, y))
 
                 self.screen.blit(button.screen, button.rect)
