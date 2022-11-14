@@ -1,8 +1,9 @@
-import itertools
+import random
+from collections import deque
+
 import src.const as const
 from src.solver import Solver
-from collections import deque
-import random
+
 
 class Generator:
     def __init__(self, grid):
@@ -11,6 +12,7 @@ class Generator:
         self.terminate = True
         self.used_shapes = {}
         self.can_rotate = {}
+
     def bfs(self, x, y):
         queue = deque()
         queue.append((x, y))
@@ -33,7 +35,7 @@ class Generator:
         spaces = [(x, y) for x in range(len(self.grid)) for y in range(len(self.grid[0]))]
         random.shuffle(spaces)
         while amount > 0:
-            if len(spaces) == 0:
+            if not spaces:
                 return False
             x, y = spaces.pop()
             sprite = self.grid[x][y]
@@ -47,17 +49,17 @@ class Generator:
                     continue
                 if self.grid[x + dx][y + dy].lit == sprite.lit:
                     count += 1
-            if not petal_count is None and petal_count != count:
+            if petal_count is not None and petal_count != count:
                 continue
             sprite.symbol = const.FLOWER[count]
             amount -= 1
         return True
 
-    def gen_diamonds(self, color, amount):
+    def gen_diamonds(self, color, amount):  # sourcery skip: low-code-quality
         spaces = [(x, y) for x in range(len(self.grid)) for y in range(len(self.grid[0]))]
         random.shuffle(spaces)
         while amount > 0:
-            if len(spaces) == 0:
+            if not spaces:
                 return False
             x, y = spaces.pop()
             sprite = self.grid[x][y]
@@ -72,13 +74,13 @@ class Generator:
                 sprite2 = self.grid[x2][y2]
                 if sprite2.symbol == 0:
                     continue
-                if sprite2.symbol in const.FLOWER[1:4] and (color == const.PURPLE or color == const.YELLOW):
+                if sprite2.symbol in const.FLOWER[1:4] and color in (const.PURPLE, const.YELLOW):
                     count += 1
                 elif sprite2.symbol == const.FLOWER[4] and color == const.YELLOW:
                     count += 1
                 elif color == sprite2.color:
                     count += 1
-            if count == 0 and amount > 1: #Add another to make a pair
+            if count == 0 and amount > 1:  # Add another to make a pair
                 for x2, y2 in area:
                     if x == x2 and y == y2:
                         continue
@@ -96,19 +98,15 @@ class Generator:
                 amount -= 1
         return True
 
-    def gen_dots(self, color, amount, dot_count=None):
+    def gen_dots(self, color, amount, dot_count=None):  # sourcery skip: low-code-quality
         spaces = [(x, y) for x in range(len(self.grid)) for y in range(len(self.grid[0]))]
         neg_spaces = [(x, y) for x, y in spaces if self.grid[x][y].symbol in const.DOT[-9:]]
         random.shuffle(spaces)
         random.shuffle(neg_spaces)
         while amount > 0:
-            if len(spaces) == 0:
+            if not spaces:
                 return False
-            x, y = 0, 0
-            if len(neg_spaces) > 0:
-                x, y = neg_spaces.pop()
-            else:
-                x, y = spaces.pop()
+            x, y = neg_spaces.pop() if neg_spaces else spaces.pop()
             area = self.bfs(x, y)
             area_open = []
             fail_on_color = False
@@ -126,12 +124,11 @@ class Generator:
                     neg_spaces.remove((x2, y2))
             if fail_on_color or not area_open:
                 continue
-            if dot_count:
-                if len(area) % dot_count != 0 or len(area) // dot_count > min(amount, len(area_open)):
-                    continue
+            if dot_count and (len(area) % dot_count != 0 or len(area) // dot_count > min(amount, len(area_open))):
+                continue
             count = len(area) + neg_count
             if neg_count > 0 and random.randrange(5) == 0:
-                count = neg_count #Build a canceling region
+                count = neg_count  # Build a canceling region
             while count > 0:
                 selected_count = min(random.randrange(1, 15), count, 9)
                 if dot_count:
@@ -140,7 +137,7 @@ class Generator:
                     if count > 9:
                         if count <= len(area) or count - len(area) > 9 or count <= neg_count:
                             return False
-                        selected_count = count - len(area) #Build a canceling region
+                        selected_count = count - len(area)  # Build a canceling region
                         count = 0
                     else:
                         selected_count = count
@@ -149,15 +146,13 @@ class Generator:
                 self.grid[x2][y2].color = color
                 count -= selected_count
                 amount -= 1
-        if neg_spaces:
-            return False
-        return True
+        return not neg_spaces
 
     def gen_antidots(self, color, amount, dot_count=None):
         spaces = [(x, y) for x in range(len(self.grid)) for y in range(len(self.grid[0]))]
         random.shuffle(spaces)
         while amount > 0:
-            if len(spaces) == 0:
+            if not spaces:
                 return False
             x, y = spaces.pop()
             sprite = self.grid[x][y]
@@ -181,10 +176,13 @@ class Generator:
             amount -= 1
         return True
 
-    def gen_lines(self, color, amount, num_rotated):
+    def gen_lines(self, color, amount, num_rotated):  # sourcery skip: low-code-quality
         shape = set()
         self.can_rotate[color] = (num_rotated > 0)
-        while not shape or any([self.is_identical(shape, s, num_rotated > 0 or self.can_rotate[c]) for c, s in self.used_shapes.items()]):
+        while not shape or any(
+                self.is_identical(shape, s, num_rotated > 0 or self.can_rotate[c])
+                for c, s in self.used_shapes.items()
+        ):
             shape = {(0, 0)}
             shape_size = random.choice([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 9])
             while len(shape) < shape_size:
@@ -192,15 +190,17 @@ class Generator:
                 dx, dy = random.choice([(0, 1), (1, 0), (0, -1), (-1, 0)])
                 x2, y2 = x + dx, y + dy
                 shape.add((x2, y2))
-        rotations = [shape]
-        rotations.append({(y, -x) for x, y in shape})
-        rotations.append({(-x, -y) for x, y in shape})
-        rotations.append({(-y, x) for x, y in shape})
+        rotations = [
+            shape,
+            {(y, -x) for x, y in shape},
+            {(-x, -y) for x, y in shape},
+            {(-y, x) for x, y in shape}
+        ]
         spaces = [(x, y) for x in range(len(self.grid)) for y in range(len(self.grid[0]))]
         random.shuffle(spaces)
         previous = None
         while amount > 0:
-            if len(spaces) == 0:
+            if not spaces:
                 return False
             x, y = spaces.pop()
             if self.grid[x][y].symbol != 0 or not self.grid[x][y].exist:
@@ -211,12 +211,12 @@ class Generator:
             placed_shape_border = set()
             for x2, y2 in shape:
                 x3, y3 = x + x2, y + y2
-                if x3 >= 0 and x3 < len(self.grid) and y3 >= 0 and y3 < len(self.grid[0]):
+                if 0 <= x3 < len(self.grid) and 0 <= y3 < len(self.grid[0]):
                     placed_shape.add((x3, y3))
                 else:
                     break
                 for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-                    if x3 + dx >= 0 and x3 + dx < len(self.grid) and y3 + dy >= 0 and y3 + dy < len(self.grid[0]):
+                    if 0 <= x3 + dx < len(self.grid) and 0 <= y3 + dy < len(self.grid[0]):
                         placed_shape_border.add((x3 + dx, y3 + dy))
             if len(shape) != len(placed_shape):
                 continue
@@ -228,7 +228,7 @@ class Generator:
                 lit_choices.append(False)
             if random.randrange(2) == 0 and previous in lit_choices:
                 lit_choices.remove(previous)
-            if len(lit_choices) == 0:
+            if not lit_choices:
                 continue
             lit = random.choice(lit_choices)
             previous = lit
@@ -251,7 +251,7 @@ class Generator:
             if not sprite.exist:
                 return False
             for dx, dy in const.DIRECTIONS:
-                if self.is_connected(x, y, x+dx, y+dy) and (x+dx, y+dy) not in placed_shape:
+                if self.is_connected(x, y, x + dx, y + dy) and (x + dx, y + dy) not in placed_shape:
                     return False
             if sprite.lit is None:
                 continue
@@ -260,7 +260,8 @@ class Generator:
         for x, y in placed_shape_border:
             sprite = self.grid[x][y]
             for dx, dy in const.DIRECTIONS:
-                if self.is_connected(x, y, x+dx, y+dy) and self.grid[x+dx][y+dy].lit != None and self.grid[x+dx][y+dy].lit == lit:
+                if self.is_connected(x, y, x + dx, y + dy) and self.grid[x + dx][y + dy].lit is not None and \
+                        self.grid[x + dx][y + dy].lit == lit:
                     return False
             if sprite.lit is None:
                 continue
@@ -289,10 +290,10 @@ class Generator:
         if sprite.lit == (not lit):
             return False
         sprite.lit = lit
-        return (not self.is_connected(x, y, x+1, y) or self.propagate_lit(x+1, y, lit)) and \
-            (not self.is_connected(x, y, x-1, y) or self.propagate_lit(x-1, y, lit)) and \
-            (not self.is_connected(x, y, x, y+1) or self.propagate_lit(x, y+1, lit)) and \
-            (not self.is_connected(x, y, x, y-1) or self.propagate_lit(x, y-1, lit))
+        return (not self.is_connected(x, y, x + 1, y) or self.propagate_lit(x + 1, y, lit)) and \
+               (not self.is_connected(x, y, x - 1, y) or self.propagate_lit(x - 1, y, lit)) and \
+               (not self.is_connected(x, y, x, y + 1) or self.propagate_lit(x, y + 1, lit)) and \
+               (not self.is_connected(x, y, x, y - 1) or self.propagate_lit(x, y - 1, lit))
 
     def propagate_fixed(self, x, y):
         if x < 0 or x >= len(self.grid) or y < 0 or y >= len(self.grid[0]):
@@ -301,10 +302,10 @@ class Generator:
         if sprite.fixed:
             return True
         sprite.fixed = True
-        return (not self.is_connected(x, y, x+1, y) or self.propagate_fixed(x+1, y)) and \
-            (not self.is_connected(x, y, x-1, y) or self.propagate_fixed(x-1, y)) and \
-            (not self.is_connected(x, y, x, y+1) or self.propagate_fixed(x, y+1)) and \
-            (not self.is_connected(x, y, x, y-1) or self.propagate_fixed(x, y-1))
+        return (not self.is_connected(x, y, x + 1, y) or self.propagate_fixed(x + 1, y)) and \
+               (not self.is_connected(x, y, x - 1, y) or self.propagate_fixed(x - 1, y)) and \
+               (not self.is_connected(x, y, x, y + 1) or self.propagate_fixed(x, y + 1)) and \
+               (not self.is_connected(x, y, x, y - 1) or self.propagate_fixed(x, y - 1))
 
     @staticmethod
     def is_identical(shape1, shape2, can_rotate=False) -> bool:
@@ -314,18 +315,17 @@ class Generator:
             return True
         return shape1 in [{(y, -x) for x, y in shape2}, {(-y, x) for x, y in shape2}, {(-x, -y) for x, y in shape2}] \
             if can_rotate else False
-        
+
     def gen_all_symbols(self, symbols):
         for color, amount in symbols['LINE'].items():
             amountr = symbols['LINE_ROTATED'][color]
             if not self.gen_lines(color, amount + amountr, amountr):
                 return False
-        #Populate random tiles
+        # Populate random tiles
         for x, row in enumerate(self.grid):
             for y, sprite in enumerate(row):
-                if sprite.lit is None:
-                    if not self.propagate_lit(x, y, random.choice([True, False])):
-                        return False
+                if sprite.lit is None and not self.propagate_lit(x, y, random.choice([True, False])):
+                    return False
         for color, amount in symbols['ANTIDOT'].items():
             if not self.gen_antidots(color, amount):
                 return False
@@ -347,7 +347,7 @@ class Generator:
 
     def generate(self, symbols=None):
         if not symbols:
-            symbols = {'DIAMOND':{}, 'FLOWER':0, 'DOT':{}, 'ANTIDOT':{}, 'LINE':{}, 'LINE_ROTATED':{}, 'FIXED':0}
+            symbols = {'DIAMOND': {}, 'FLOWER': 0, 'DOT': {}, 'ANTIDOT': {}, 'LINE': {}, 'LINE_ROTATED': {}, 'FIXED': 0}
             for row in self.grid:
                 for sprite in row:
                     if sprite.symbol == const.DIAMOND:
@@ -388,10 +388,4 @@ class Generator:
                             sprite.lit = False
                 self.terminate = True
                 return
-            #TODO: Implement solution count enforcement
-
-        
-    
-
-
-
+            # TODO: Implement solution count enforcement

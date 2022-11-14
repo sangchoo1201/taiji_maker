@@ -34,10 +34,7 @@ class Builder:
         self.symbol_palette = Palette(250, 26)
         self.symbol_palette.list = [(pygame.image.load(f"resource/symbol/{i}.png"), i) for i in const.SYMBOLS]
 
-        self.custom_palette = Palette(250, 9)
-        self.custom_palette.list = [(pygame.image.load(f"resource/symbol/{i}.png"), i) for i in const.CUSTOM_SYMBOLS]
-
-        self.palettes = [self.symbol_palette, self.custom_palette]
+        self.palettes = [self.symbol_palette]
         self.selected_palette = 0
 
         self.color_palette = Palette(250, 0)
@@ -118,8 +115,6 @@ class Builder:
                 result = self.play()
                 if result is not None:
                     return result
-            if event.key == pygame.K_TAB:
-                self.selected_palette = not self.selected_palette
             directions = {pygame.K_UP: (0, -1), pygame.K_DOWN: (0, 1), pygame.K_LEFT: (-1, 0), pygame.K_RIGHT: (1, 0)}
             if event.key in directions:
                 self.drawer.resize(*directions[event.key])
@@ -322,11 +317,9 @@ class Builder:
         rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size // 8 * 5))
         self.screen.blit(text, rect)
 
-        text = font.render("TAB: change symbol palette", True, const.WHITE)
-        rect = text.get_rect(topleft=(context.tile_size // 2, context.tile_size // 4 * 5))
-        self.screen.blit(text, rect)
-
-        for i, button in enumerate((self.hidden_button, self.fixed_button, self.exist_button, self.gen_button, self.solve_button)):
+        for i, button in enumerate((
+                self.hidden_button, self.fixed_button, self.exist_button, self.gen_button, self.solve_button
+        )):
             button.draw()
             x = context.screen_width // 2 + context.tile_size * (i - 2) * 3.1
             y = context.screen_height - context.tile_size * 0.8

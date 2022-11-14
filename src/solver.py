@@ -79,13 +79,13 @@ class Solver:
 
     def check_dot(self, area, open_region):
         color = None
-        higher_count, lower_count = 0, 0
+        count = 0
         extra_count = 0
         neg_count = 0
         x = y = None
         for x, y in area:
             sprite = self.grid[x][y]
-            if sprite.symbol not in const.DOT[1:] + const.BIG_DOT:
+            if sprite.symbol not in const.DOT[1:]:
                 continue
             if color is None:
                 color = sprite.color
@@ -93,18 +93,14 @@ class Solver:
                 return False
 
             if sprite.symbol in const.DOT:
-                lower_count += sprite.symbol
-                higher_count += sprite.symbol
+                count += sprite.symbol
                 if sprite.symbol < 0:
                     neg_count += -sprite.symbol
-            if sprite.symbol in const.BIG_DOT:
-                lower_count += sprite.symbol - 30
-                higher_count += (sprite.symbol - 30) * 2
-        if lower_count == higher_count == 0:
+        if count == 0:
             return True
         if not open_region:
-            return lower_count <= len(area) <= higher_count
-        if len(area) <= higher_count:
+            return count == len(area)
+        if len(area) <= count:
             return True
         for x2, y2 in self.remainder:
             sprite = self.grid[x2][y2]
@@ -112,7 +108,7 @@ class Solver:
                 extra_count += sprite.symbol
             if sprite.symbol < 0 and color == sprite.color and self.match_lit(x, y, x2, y2) is not False:
                 neg_count += -sprite.symbol
-        return len(area) < higher_count + extra_count or neg_count >= lower_count
+        return len(area) < count + extra_count or neg_count >= count
 
     def match_lit(self, x1, y1, x2, y2):
         if not 0 <= y2 < self.width or not 0 <= x2 < self.height:
@@ -319,15 +315,13 @@ class Solver:
         self.solve_r(0, 0)
 
     def solve_r(self, x, y) -> bool:  # sourcery skip: low-code-quality
-        if self.terminate and self.solutions:
-            sol = self.solutions[0]
-            for x in range(len(sol)):
-                for y in range(len(sol[0])):
+        if self.terminate:
+            if self.solutions:
+                sol = self.solutions[0]
+                for x, y in itertools.product(range(len(sol)), range(len(sol[0]))):
                     self.grid[x][y].lit = sol[x][y]
-            return True
-        elif self.terminate:
-            for x in range(len(self.grid)):
-                for y in range(len(self.grid[0])):
+            else:
+                for x, y in itertools.product(range(len(self.grid)), range(len(self.grid[0]))):
                     if not self.grid[x][y].fixed:
                         self.grid[x][y].lit = False
             return True

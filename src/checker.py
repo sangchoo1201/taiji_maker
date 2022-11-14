@@ -11,13 +11,15 @@ class Checker:
         self.height = len(grid)
 
     def check(self):
+        if not self.check_flower():
+            return False
         areas = self.divide_areas()
         for area in areas:
             if not self.check_diamond(area):
                 return False
             if not self.check_dot(area):
                 return False
-        return self.check_line(areas) if self.check_flower() else False
+        return self.check_line(areas)
 
     def divide_areas(self):
         already_visited = set()
@@ -54,19 +56,24 @@ class Checker:
     def check_flower(self):
         for x, row in enumerate(self.grid):
             for y, sprite in enumerate(row):
-                count = 0
                 if sprite.symbol not in const.FLOWER:
                     continue
-                for dx, dy in const.DIRECTIONS:
-                    if not 0 <= y + dy < self.width or not 0 <= x + dx < self.height:
-                        continue
-                    if not self.grid[x + dx][y + dy].exist:
-                        continue
-                    if self.grid[x + dx][y + dy].lit == sprite.lit:
-                        count += 1
+                count = self.get_flower_count(x, y)
                 if count != sprite.symbol - 20:
                     return False
         return True
+
+    def get_flower_count(self, x, y):
+        count = 0
+        sprite = self.grid[x][y]
+        for dx, dy in const.DIRECTIONS:
+            if not 0 <= y + dy < self.width or not 0 <= x + dx < self.height:
+                continue
+            if not self.grid[x + dx][y + dy].exist:
+                continue
+            if self.grid[x + dx][y + dy].lit == sprite.lit:
+                count += 1
+        return count
 
     def check_diamond(self, area):
         amounts_diamond = {}
@@ -93,23 +100,18 @@ class Checker:
 
     def check_dot(self, area):
         color = None
-        dot_lower, dot_higher = 0, 0
+        dot_count = 0
         for x, y in area:
             sprite = self.grid[x][y]
-            if sprite.symbol not in const.DOT[1:] + const.BIG_DOT or not sprite.exist:
+            if sprite.symbol not in const.DOT[1:] or not sprite.exist:
                 continue
             if color is None:
                 color = sprite.color
             if color != sprite.color:
                 return False
 
-            if sprite.symbol in const.DOT:
-                dot_lower += sprite.symbol
-                dot_higher += sprite.symbol
-            if sprite.symbol in const.BIG_DOT:
-                dot_lower += sprite.symbol - 30
-                dot_higher += (sprite.symbol - 30) * 2
-        return dot_lower == dot_higher == 0 or dot_lower <= len(area) <= dot_higher
+            dot_count += sprite.symbol
+        return dot_count in (0, len(area))
 
     def check_line(self, areas):  # sourcery skip: dict-assign-update-to-union
         shapes = {}
